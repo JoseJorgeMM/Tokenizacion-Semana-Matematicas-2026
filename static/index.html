@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Cómo piensa la IA? — Taller Interactivo</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --surface: #0e1420;
+    --surface2: #141c2e;
+    --border: #1e2d47;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #334155;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glowing orbs */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: drift 15s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    to { transform: translate(100px, 150px); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-top: 2rem;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.3);
+    padding: 0.3rem 1rem;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    animation: fadeDown 0.6s 0.1s ease both;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    margin-top: 0.8rem;
+    animation: fadeDown 0.6s 0.2s ease both;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── STEPS NAV ── */
+  .steps-nav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    animation: fadeDown 0.6s 0.3s ease both;
+  }
+
+  .step-btn {
+    flex: 1;
+    padding: 0.9rem 0.5rem;
+    background: var(--surface);
+    border: none;
+    border-right: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    letter-spacing: 0.04em;
+  }
+
+  .step-btn:last-child { border-right: none; }
+  .step-btn .step-num {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    transition: color 0.25s;
+  }
+
+  .step-btn.active {
+    background: var(--surface2);
+    color: var(--accent);
+  }
+  .step-btn.active .step-num { color: var(--accent); }
+  .step-btn.done { color: var(--accent3); }
+  .step-btn.done .step-num { color: var(--accent3); }
+
+  /* ── PANELS ── */
+  .panel {
+    display: none;
+    animation: panelIn 0.4s ease;
+  }
+  .panel.active { display: block; }
+
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .card:hover::before { opacity: 1; }
+
+  .card-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .card p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ── CORPUS INPUT ── */
+  .corpus-area {
+    width: 100%;
+    min-height: 120px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 1rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.25s;
+    line-height: 1.6;
+  }
+
+  .corpus-area:focus { border-color: var(--accent); }
+  .corpus-area::placeholder { color: var(--text-dim); }
+
+  /* ── INLINE INPUT ── */
+  .input-row {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+  }
+
+  .input-field {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    outline: none;
+    transition: border-color 0.25s;
+  }
+
+  .input-field:focus { border-color: var(--accent); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .btn-secondary:hover { background: rgba(0,212,255,0.08); }
+
+  .btn-purple {
+    background: var(--accent2);
+    color: white;
+  }
+  .btn-purple:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+  .btn-green {
+    background: var(--accent3);
+    color: var(--bg);
+  }
+  .btn-green:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  /* ── TOKENS DISPLAY ── */
+  .tokens-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    min-height: 2.5rem;
+    padding: 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .token {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    animation: tokenPop 0.3s ease both;
+    cursor: default;
+  }
+
+  @keyframes tokenPop {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .token-colors {
+    background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3);
+  }
+  .token-color-1 { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .token-color-2 { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+  .token-color-3 { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .token-color-4 { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* ── PROBABILITY TABLE ── */
+  .prob-table-wrap {
+    overflow-x: auto;
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+
+  thead {
+    background: var(--surface2);
+  }
+
+  th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    color: var(--accent);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(30,45,71,0.5);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(0,212,255,0.03); }
+
+  .prob-bar-cell { width: 35%; }
+  .prob-bar-bg {
+    background: var(--border);
+    border-radius: 2px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .prob-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .prob-value {
+    color: var(--accent3);
+    font-weight: 600;
+  }
+
+  .fraction {
+    color: var(--warn);
+    font-size: 0.72rem;
+  }
+
+  /* ── PREDICTION ── */
+  .prediction-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 1rem;
+    min-height: 3.5rem;
+    font-size: 1rem;
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+  }
+
+  .word-generated {
+    color: var(--accent);
+    font-weight: 700;
+    animation: wordAppear 0.4s ease both;
+  }
+
+  .word-seed {
+    color: var(--text-muted);
+  }
+
+  @keyframes wordAppear {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── STEP HIGHLIGHT ── */
+  .highlight-box {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.2rem;
+    border-radius: 0 4px 4px 0;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .highlight-box strong { color: var(--accent); }
+
+  .highlight-box.purple {
+    background: rgba(124,58,237,0.05);
+    border-color: rgba(124,58,237,0.2);
+    border-left-color: var(--accent2);
+  }
+  .highlight-box.purple strong { color: #a78bfa; }
+
+  .highlight-box.green {
+    background: rgba(16,185,129,0.05);
+    border-color: rgba(16,185,129,0.2);
+    border-left-color: var(--accent3);
+  }
+  .highlight-box.green strong { color: var(--accent3); }
+
+  /* ── CORPUS PHRASES LIST ── */
+  .phrases-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .phrase-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .phrase-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    flex-shrink: 0;
+  }
+
+  .phrase-delete {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 0.2rem;
+    transition: color 0.2s;
+  }
+  .phrase-delete:hover { color: #ef4444; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    margin-top: 1rem;
+  }
+
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* ── WORD SELECTOR ── */
+  .word-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    min-height: 3rem;
+  }
+
+  .word-chip {
+    padding: 0.25rem 0.7rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .word-chip:hover {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .section-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── EQUATION DISPLAY ── */
+  .equation {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    padding: 0.8rem 1.2rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--warn);
+    margin: 0.5rem 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── REFLECTION ── */
+  .question-card {
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    margin-bottom: 0.6rem;
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
+  }
+
+  .q-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+  }
+
+  .q-text {
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .q-text strong { color: var(--accent); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding-top: 3rem;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── STATUS MSG ── */
+  .status-msg {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    min-height: 1.2rem;
+    transition: color 0.3s;
+  }
+  .status-msg.ok { color: var(--accent3); }
+  .status-msg.err { color: #ef4444; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .step-btn { font-size: 0.6rem; padding: 0.7rem 0.3rem; }
+    h1 { font-size: 1.8rem; }
+  }
+
+  /* ── PULSE ANIMATION ── */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(0,212,255,0); }
+  }
+
+  .pulse { animation: pulse-glow 2s infinite; }
+
+  /* ── N-gram filter indicator ── */
+  .filter-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .filter-chip {
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: var(--surface);
+    transition: all 0.2s;
+    font-family: var(--font-mono);
+  }
+  .filter-chip.active {
+    background: rgba(0,212,255,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">Día Mundial de las Matemáticas · Medellín 2026</div>
+    <h1>¿Cómo <span>piensa</span> la IA?</h1>
+    <p class="subtitle">Taller interactivo · Abriendo la caja negra de la IA generativa</p>
+  </header>
+
+  <!-- STEP NAVIGATION -->
+  <div class="steps-nav">
+    <button class="step-btn active" onclick="goTo(0)" id="stepbtn-0">
+      <span class="step-num">01</span>Corpus
+    </button>
+    <button class="step-btn" onclick="goTo(1)" id="stepbtn-1">
+      <span class="step-num">02</span>Tokens
+    </button>
+    <button class="step-btn" onclick="goTo(2)" id="stepbtn-2">
+      <span class="step-num">03</span>Probabilidades
+    </button>
+    <button class="step-btn" onclick="goTo(3)" id="stepbtn-3">
+      <span class="step-num">04</span>Predicción
+    </button>
+    <button class="step-btn" onclick="goTo(4)" id="stepbtn-4">
+      <span class="step-num">05</span>Reflexión
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PANEL 0 — CORPUS
+  ════════════════════════════════════════════ -->
+  <div class="panel active" id="panel-0">
+    <div class="section-title">Paso 1 · Construimos el corpus</div>
+    <p class="section-desc">
+      El corpus es el conjunto de textos con el que la IA aprende. Hoy, <strong>ustedes son el corpus</strong>.<br>
+      Cada mesa escribe frases sobre matemáticas. Estas frases serán el "conocimiento" de nuestro modelo.
+    </p>
+
+    <div class="card">
+      <div class="card-label">Agregar frase al corpus</div>
+      <textarea class="corpus-area" id="phraseInput" placeholder="Escribe una frase sobre matemáticas...&#10;Ej: La suma de los ángulos de un triángulo es ciento ochenta grados&#10;Ej: El área del círculo depende del radio&#10;Ej: La derivada mide la tasa de cambio de una función"></textarea>
+      <div class="input-row">
+        <button class="btn btn-primary pulse" onclick="addPhrase()">+ Agregar frase</button>
+        <button class="btn btn-secondary" onclick="addExamples()">Cargar ejemplos</button>
+      </div>
+      <div class="status-msg" id="corpusStatus"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Corpus actual</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-num" id="statPhrases">0</span>
+          <span class="stat-label">Frases</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statWords">0</span>
+          <span class="stat-label">Palabras</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statVocab">0</span>
+          <span class="stat-label">Vocabulario</span>
+        </div>
+      </div>
+      <div class="phrases-list" id="phrasesList">
+        <div style="color:var(--text-dim);font-size:0.75rem;padding:0.5rem">Aún no hay frases. ¡Agrégalas arriba!</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong>📐 Conexión matemática:</strong> El corpus es como una <strong>muestra estadística</strong>.
+      Cuantas más frases agreguemos, más representativa será la distribución de palabras que aprenderá el modelo.
+      Igual que en estadística: más datos → mejores estimaciones.
+    </div>
+
+    <div style="margin-top:1.5rem;display:flex;justify-content:flex-end">
+      <button class="btn btn-primary" onclick="trainAndNext()" id="btnTrainNext" disabled>
+        Entrenar modelo → Paso 2
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PANEL 1 — TOKENIZACIÓN
+  ════════════════════════════════════════════ -->
+  <div class="panel" id="panel-1">
+    <div class="section-title">Paso 2 · Tokenización</div>
+    <p class="section-desc">
+      Antes de aprender, la IA divide el texto en piezas llamadas <strong>tokens</strong>.
+      En modelos sencillos como el nuestro, cada token es una palabra. En ChatGPT, son fragmentos de palabras.
+    </p>
+
+    <div class="card">
+      <div class="card-label">Selecciona una frase del corpus para tokenizar</div>
+      <div class="word-selector" id="phraseSelector"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Resultado de la tokenización</div>
+      <div class="tokens-display" id="tokensDisplay">
+        <span style="color:var(--text-dim);font-size:0.75rem">Selecciona una frase arriba</span>
+      </div>
+      <div class="highlight-box" style="margin-top:1rem">
+        <strong>💡 ¿Qué hace la tokenización?</strong><br>
+        Convierte texto → lista de unidades numéricas. El modelo nunca ve letras: ve <strong>números (índices)</strong>.
+        Cada token tiene un ID único en el vocabulario.
+        <div class="equation" style="margin-top:0.6rem">
+          "La" → 0 &nbsp;|&nbsp; "suma" → 1 &nbsp;|&nbsp; "de" → 2 &nbsp;|&nbsp; ...
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Vocabulario completo del corpus</div>
+      <div id="vocabDisplay" class="tokens-display"></div>
+      <div class="highlight-box purple" style="margin-top:1rem">
+        <strong>📐 Conexión matemática:</strong> El vocabulario es un <strong>conjunto finito V</strong>.
+        La tokenización es una función biyectiva <em>f: palabras → {0, 1, 2, ..., |V|-1}</em>.
+        ¡Matemáticas discretas en acción!
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
+      <button class="btn btn-secondary" onclick="goTo(0)">← Volver</button>
+      <button class="btn btn-primary" onclick="goTo(2)">Ver probabilidades → Paso 3</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PANEL 2 — PROBABILIDADES
+  ════════════════════════════════════════════ -->
+  <div class="panel" id="panel-2">
+    <div class="section-title">Paso 3 · La tabla de probabilidades</div>
+    <p class="section-desc">
+      Aquí está <strong>el corazón de la IA generativa</strong>. El modelo aprende a preguntarse:
+      dado que acabo de ver esta palabra, ¿cuál es la más probable que venga después?
+    </p>
+
+    <div class="card">
+      <div class="card-label">Selecciona una palabra para ver sus sucesores</div>
+      <div class="filter-row">
+        <span class="filter-label">Palabra inicial:</span>
+        <div id="wordFilterChips" style="display:flex;flex-wrap:wrap;gap:0.4rem"></div>
+      </div>
+      <div class="prob-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Palabra actual</th>
+              <th>Palabra siguiente</th>
+              <th>Frecuencia</th>
+              <th>Probabilidad</th>
+              <th class="prob-bar-cell">Distribución</th>
+            </tr>
+          </thead>
+          <tbody id="probTableBody">
+            <tr><td colspan="5" style="color:var(--text-dim);text-align:center;padding:1.5rem">Selecciona una palabra arriba</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong>📐 Conexión matemática:</strong> Esto es una <strong>distribución de probabilidad condicional</strong>:
+      <div class="equation">P(palabra_siguiente | palabra_actual) = frecuencia(par) / frecuencia(actual)</div>
+      La suma de todas las probabilidades de una fila siempre es <strong>1</strong> (100%). ¡Distribución de probabilidad discreta!
+    </div>
+
+    <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
+      <button class="btn btn-secondary" onclick="goTo(1)">← Volver</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Generar predicciones → Paso 4</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PANEL 3 — PREDICCIÓN
+  ════════════════════════════════════════════ -->
+  <div class="panel" id="panel-3">
+    <div class="section-title">Paso 4 · El modelo predice</div>
+    <p class="section-desc">
+      Ahora el modelo usa todo lo que aprendió para <strong>completar frases</strong>.
+      Escribe una palabra semilla y observa cómo el modelo genera texto, paso a paso, usando probabilidades.
+    </p>
+
+    <div class="card">
+      <div class="card-label">Palabras de inicio disponibles</div>
+      <div class="word-selector" id="seedChips"></div>
+      <div class="input-row" style="margin-top:1rem">
+        <input class="input-field" id="seedInput" placeholder="O escribe una palabra semilla..." />
+        <input class="input-field" id="lengthInput" type="number" value="8" min="3" max="20" style="max-width:80px" title="Longitud" />
+        <button class="btn btn-purple" onclick="generateText()">Generar ✦</button>
+      </div>
+      <div class="status-msg" id="genStatus"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Texto generado</div>
+      <div class="prediction-box" id="predictionBox">
+        <span style="color:var(--text-dim)">El texto generado aparecerá aquí...</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Decisiones tomadas por el modelo (paso a paso)</div>
+      <div id="decisionsLog" style="font-size:0.75rem;color:var(--text-muted);line-height:2">
+        <span style="color:var(--text-dim)">Las decisiones aparecerán aquí...</span>
+      </div>
+    </div>
+
+    <div class="highlight-box green">
+      <strong>🧠 La gran revelación:</strong> El modelo no "entiende" matemáticas ni "piensa".
+      En cada paso <strong>elige la siguiente palabra según probabilidades</strong> aprendidas de tu corpus.
+      Es estadística aplicada, no magia. <strong>Y ese corpus lo crearon ustedes.</strong>
+    </div>
+
+    <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
+      <button class="btn btn-secondary" onclick="goTo(2)">← Volver</button>
+      <button class="btn btn-green" onclick="goTo(4)">Reflexión final →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PANEL 4 — REFLEXIÓN
+  ════════════════════════════════════════════ -->
+  <div class="panel" id="panel-4">
+    <div class="section-title">Paso 5 · Reflexión</div>
+    <p class="section-desc">
+      Han construido y visto funcionar un modelo de IA generativa. Ahora las preguntas importantes:
+    </p>
+
+    <div class="question-card">
+      <div class="q-icon">🎲</div>
+      <div class="q-text">
+        <strong>¿La IA "sabe" matemáticas?</strong><br>
+        No. Aprendió patrones estadísticos de texto. Si el corpus tiene errores, el modelo genera errores.
+        ChatGPT funciona igual — pero con miles de millones de textos.
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="q-icon">📊</div>
+      <div class="q-text">
+        <strong>¿Qué pasaría si agregamos frases incorrectas al corpus?</strong><br>
+        El modelo aprendería a generar frases incorrectas con alta probabilidad. <strong>Garbage in, garbage out.</strong>
+        La calidad del dato es todo en IA.
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="q-icon">🔢</div>
+      <div class="q-text">
+        <strong>¿Dónde están las matemáticas en la IA real?</strong><br>
+        Probabilidad condicional · Álgebra lineal (vectores y matrices) · Cálculo (gradiente descendente) ·
+        Estadística (distribuciones). <strong>La IA es matemáticas aplicadas.</strong>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="q-icon">🏫</div>
+      <div class="q-text">
+        <strong>¿Cómo pueden usar esto en sus clases?</strong><br>
+        Pueden construir este mismo ejercicio con frases de sus estudiantes para enseñar
+        <strong>probabilidad condicional, fracciones y estadística</strong> de forma aplicada y motivadora.
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="q-icon">⚠️</div>
+      <div class="q-text">
+        <strong>¿Cuál es el límite de nuestro modelo vs ChatGPT?</strong><br>
+        Nuestro modelo usa bigramas (1 palabra de contexto). GPT-4 usa ventanas de
+        <strong>128.000 tokens</strong> de contexto, con 175.000 millones de parámetros.
+        Pero el principio probabilístico es el <strong>mismo</strong>.
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin-top:1.5rem">
+      <strong>✦ La idea que se llevan hoy:</strong><br>
+      La IA generativa no piensa, no entiende, no siente. Es un <strong>motor de predicción estadística</strong>
+      entrenado con datos humanos. Sus respuestas son tan buenas o malas como los datos con que fue entrenada.
+      Y las matemáticas son el lenguaje en el que está escrita.
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;text-align:center">
+      <div class="card-label">¿Quieres volver a experimentar?</div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">
+        Modifica el corpus, agrega frases nuevas y observa cómo cambia el comportamiento del modelo.
+      </p>
+      <button class="btn btn-primary" onclick="resetAll()">↺ Reiniciar con nuevo corpus</button>
+    </div>
+
+    <footer>
+      Taller · Humanizando la Enseñanza de las Matemáticas · Medellín 2026<br>
+      Modelo: Cadena de Markov (bigramas) · Sin librerías externas · 100% matemáticas
+    </footer>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CONFIG — apunta a la API
+//  En desarrollo local: cambia a "http://localhost:8000"
+//  En Vercel: "" (misma origin)
+// ═══════════════════════════════════════════════════
+const API = "";   // ← vacío = misma URL que el frontend
+
+// ═══════════════════════════════════════════════════
+//  STATE (UI cache — la fuente de verdad es la API)
+// ═══════════════════════════════════════════════════
+let corpus = [];
+let vocab  = [];
+let currentStep = 0;
+let selectedFilterWord = null;
+
+// ── fetch helper ─────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════
+function goTo(step) {
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i === step);
+  });
+  document.querySelectorAll('.step-btn').forEach((b, i) => {
+    b.classList.remove('active', 'done');
+    if (i === step) b.classList.add('active');
+    else if (i < step) b.classList.add('done');
+  });
+  currentStep = step;
+  if (step === 1) renderTokenPanel();
+  if (step === 2) renderProbPanel();
+  if (step === 3) renderPredPanel();
+}
+
+// ═══════════════════════════════════════════════════
+//  CORPUS — conectado a la API
+// ═══════════════════════════════════════════════════
+async function loadCorpus() {
+  try {
+    const data = await api("/api/corpus");
+    corpus = data.phrases;
+    vocab  = data.stats.vocab;
+    renderCorpusUI(data);
+  } catch(e) {
+    setStatus('corpusStatus', `Error cargando corpus: ${e.message}`, 'err');
+  }
+}
+
+async function addPhrase() {
+  const input = document.getElementById('phraseInput');
+  const raw = input.value.trim();
+  if (!raw) return setStatus('corpusStatus', 'Escribe una frase primero.', 'err');
+  if (raw.split(/\s+/).length < 3) return setStatus('corpusStatus', 'La frase debe tener al menos 3 palabras.', 'err');
+
+  setStatus('corpusStatus', 'Guardando...', '');
+  try {
+    await api("/api/corpus/add", {
+      method: "POST",
+      body: JSON.stringify({ phrase: raw }),
+    });
+    input.value = '';
+    await loadCorpus();
+    setStatus('corpusStatus', `✓ Frase agregada. Total: ${corpus.length}`, 'ok');
+  } catch(e) {
+    setStatus('corpusStatus', `Error: ${e.message}`, 'err');
+  }
+}
+
+document.getElementById('phraseInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addPhrase(); }
+});
+
+async function addExamples() {
+  const examples = [
+    "La suma de los ángulos interiores de un triángulo es ciento ochenta grados",
+    "El área del círculo se calcula multiplicando pi por el radio al cuadrado",
+    "La derivada mide la tasa de cambio instantánea de una función",
+    "La probabilidad de un evento es el cociente entre casos favorables y casos posibles",
+    "Una función lineal tiene la forma de a por equis más b",
+    "El teorema de Pitágoras relaciona los lados de un triángulo rectángulo",
+    "La suma de una progresión aritmética depende del primer término y la razón",
+    "Los números primos son divisibles únicamente por uno y por sí mismos"
+  ];
+  setStatus('corpusStatus', 'Cargando ejemplos...', '');
+  let added = 0;
+  for (const ex of examples) {
+    if (!corpus.includes(ex)) {
+      try {
+        await api("/api/corpus/add", {
+          method: "POST",
+          body: JSON.stringify({ phrase: ex }),
+        });
+        added++;
+      } catch(_) {}
+    }
+  }
+  await loadCorpus();
+  setStatus('corpusStatus', `✓ ${added} ejemplos cargados. Total: ${corpus.length}`, 'ok');
+}
+
+async function removePhrase(i) {
+  try {
+    await api(`/api/corpus/${i}`, { method: "DELETE" });
+    await loadCorpus();
+  } catch(e) {
+    setStatus('corpusStatus', `Error: ${e.message}`, 'err');
+  }
+}
+
+function renderCorpusUI(data) {
+  const list = document.getElementById('phrasesList');
+  if (corpus.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;padding:0.5rem">Aún no hay frases.</div>';
+  } else {
+    list.innerHTML = corpus.map((p, i) =>
+      `<div class="phrase-item">
+        <div class="phrase-dot"></div>
+        <span>${p}</span>
+        <button class="phrase-delete" onclick="removePhrase(${i})">×</button>
+      </div>`
+    ).join('');
+  }
+  document.getElementById('statPhrases').textContent = data.stats.total_phrases;
+  document.getElementById('statWords').textContent   = data.stats.total_words;
+  document.getElementById('statVocab').textContent   = data.stats.vocab_size;
+  document.getElementById('btnTrainNext').disabled   = corpus.length < 2;
+}
+
+// ═══════════════════════════════════════════════════
+//  TRAINING — ahora solo navega (el modelo vive en la API)
+// ═══════════════════════════════════════════════════
+function trainAndNext() {
+  if (corpus.length < 2) return;
+  goTo(1);
+}
+
+// ═══════════════════════════════════════════════════
+//  PANEL 1 — TOKENIZACIÓN (API)
+// ═══════════════════════════════════════════════════
+async function renderTokenPanel() {
+  // Phrase selector
+  const sel = document.getElementById('phraseSelector');
+  sel.innerHTML = corpus.map((p, i) =>
+    `<button class="word-chip" onclick="showTokens(${i})">${p.length > 50 ? p.substring(0,48)+'…' : p}</button>`
+  ).join('');
+
+  // Vocab display desde cache local
+  const vd = document.getElementById('vocabDisplay');
+  const colors = ['token-colors','token-color-1','token-color-2','token-color-3','token-color-4'];
+  vd.innerHTML = vocab.map((w, i) =>
+    `<span class="token ${colors[i % colors.length]}" title="ID: ${i}">${w}</span>`
+  ).join('');
+}
+
+async function showTokens(phraseIdx) {
+  const display = document.getElementById('tokensDisplay');
+  display.innerHTML = '<span style="color:var(--text-dim);font-size:0.75rem">Tokenizando...</span>';
+  try {
+    const data = await api(`/api/model/tokens?phrase=${encodeURIComponent(corpus[phraseIdx])}`);
+    const colors = ['token-colors','token-color-1','token-color-2','token-color-3','token-color-4'];
+    display.innerHTML = '';
+    data.tokens.forEach((t, i) => {
+      setTimeout(() => {
+        const span = document.createElement('span');
+        span.className = `token ${colors[i % colors.length]}`;
+        span.title = `ID: ${t.id}`;
+        span.textContent = t.word;
+        display.appendChild(span);
+      }, i * 80);
+    });
+  } catch(e) {
+    display.innerHTML = `<span style="color:#ef4444">${e.message}</span>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PANEL 2 — PROBABILIDADES (API)
+// ═══════════════════════════════════════════════════
+async function renderProbPanel() {
+  const chips = document.getElementById('wordFilterChips');
+  chips.innerHTML = '<span style="color:var(--text-dim);font-size:0.75rem">Cargando vocabulario...</span>';
+  try {
+    const data = await api("/api/model/probabilities");
+    const words = Object.keys(data.model).sort();
+    chips.innerHTML = words.map(w =>
+      `<button class="filter-chip" onclick="showProbs('${w}')" id="chip-${w.replace(/[^a-z0-9]/g,'_')}">${w}</button>`
+    ).join('');
+  } catch(e) {
+    chips.innerHTML = `<span style="color:#ef4444">${e.message}</span>`;
+  }
+}
+
+async function showProbs(word) {
+  selectedFilterWord = word;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  const chip = document.getElementById(`chip-${word.replace(/[^a-z0-9]/g,'_')}`);
+  if (chip) chip.classList.add('active');
+
+  const tbody = document.getElementById('probTableBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;padding:1rem">Calculando...</td></tr>';
+
+  try {
+    const data = await api(`/api/model/probabilities?word=${encodeURIComponent(word)}`);
+    const rows = Object.entries(data.successors);
+
+    tbody.innerHTML = rows.map(([nxt, info], i) => `
+      <tr>
+        <td>${i === 0 ? `<strong style="color:var(--accent)">${word}</strong>` : `<span style="color:var(--text-dim)">${word}</span>`}</td>
+        <td><strong>${nxt}</strong></td>
+        <td><span class="fraction">${info.count}/${info.total}</span></td>
+        <td><span class="prob-value">${(info.prob * 100).toFixed(1)}%</span></td>
+        <td class="prob-bar-cell">
+          <div class="prob-bar-bg">
+            <div class="prob-bar-fill" style="width:0%" data-target="${(info.prob * 100).toFixed(1)}"></div>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    setTimeout(() => {
+      document.querySelectorAll('.prob-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.target + '%';
+      });
+    }, 50);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;padding:1rem">${e.message}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PANEL 3 — PREDICCIÓN (API)
+// ═══════════════════════════════════════════════════
+async function renderPredPanel() {
+  const chips = document.getElementById('seedChips');
+  chips.innerHTML = '<span style="color:var(--text-dim);font-size:0.75rem">Cargando...</span>';
+  try {
+    const data = await api("/api/model/probabilities");
+    const words = Object.keys(data.model).slice(0, 20);
+    chips.innerHTML = words.map(w =>
+      `<button class="word-chip" onclick="useSeed('${w}')">${w}</button>`
+    ).join('');
+  } catch(e) {
+    chips.innerHTML = `<span style="color:#ef4444">${e.message}</span>`;
+  }
+}
+
+function useSeed(word) {
+  document.getElementById('seedInput').value = word;
+  generateText();
+}
+
+async function generateText() {
+  const seedRaw = document.getElementById('seedInput').value.trim().toLowerCase();
+  const length  = parseInt(document.getElementById('lengthInput').value) || 8;
+
+  if (!seedRaw) return setStatus('genStatus', 'Escribe una palabra semilla.', 'err');
+  setStatus('genStatus', 'Generando...', '');
+
+  try {
+    const data = await api("/api/model/generate", {
+      method: "POST",
+      body: JSON.stringify({ seed: seedRaw, length }),
+    });
+
+    // Render text
+    const box = document.getElementById('predictionBox');
+    box.innerHTML = data.words.map((w, i) =>
+      i === 0
+        ? `<span class="word-seed">${w}</span>`
+        : `<span class="word-generated" style="animation-delay:${i * 0.12}s"> ${w}</span>`
+    ).join('');
+
+    // Render decisions
+    const log = document.getElementById('decisionsLog');
+    log.innerHTML = data.steps.map((d, i) =>
+      `<div style="animation:slideIn 0.3s ${i * 0.1}s ease both;opacity:0;animation-fill-mode:both">
+        <span style="color:var(--text-dim)">Paso ${i + 1}:</span>
+        <span style="color:var(--accent)">${d.from}</span>
+        <span style="color:var(--text-dim)"> → </span>
+        <span style="color:var(--accent3);font-weight:600">${d.to}</span>
+        <span style="color:var(--text-dim)"> · P = ${d.fraction} = </span>
+        <span style="color:var(--warn);font-weight:600">${d.prob_pct}</span>
+      </div>`
+    ).join('');
+
+    setStatus('genStatus', '');
+  } catch(e) {
+    setStatus('genStatus', `Error: ${e.message}`, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status-msg' + (type ? ' ' + type : '');
+}
+
+async function resetAll() {
+  try {
+    await api("/api/corpus", { method: "DELETE" });
+    corpus = [];
+    vocab  = [];
+    renderCorpusUI({ stats: { total_phrases: 0, total_words: 0, vocab_size: 0, vocab: [] } });
+    document.getElementById('phraseInput').value = '';
+    goTo(0);
+  } catch(e) {
+    alert(`Error al reiniciar: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT — carga el corpus al abrir la página
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  loadCorpus();
+});
+</script>
+</body>
+</html>
