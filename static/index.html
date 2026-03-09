@@ -1137,7 +1137,6 @@ async function animateTraining() {
       if (!revealedNodes.has(to)) {
         revealedNodes.add(to);
         node.filter(d => d.id === to).selectAll('circle').classed('visible', true);
-        node.filter(d => d.id => d.id === to).selectAll('text').classed('visible', true);
         node.filter(d => d.id === to).selectAll('text').classed('visible', true);
       }
 
