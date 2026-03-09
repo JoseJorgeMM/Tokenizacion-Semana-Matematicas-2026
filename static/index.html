@@ -3,1348 +3,1473 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>¿Cómo piensa la IA? — Taller Interactivo</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<title>¿Cómo piensa la IA? · Pantalla Principal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  :root {
-    --bg: #080c10;
-    --surface: #0e1420;
-    --surface2: #141c2e;
-    --border: #1e2d47;
-    --accent: #00d4ff;
-    --accent2: #7c3aed;
-    --accent3: #10b981;
-    --warn: #f59e0b;
-    --text: #e2e8f0;
-    --text-muted: #64748b;
-    --text-dim: #334155;
-    --font-display: 'Syne', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-mono);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Animated grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Glowing orbs */
-  body::after {
-    content: '';
-    position: fixed;
-    top: -200px;
-    left: -200px;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    animation: drift 15s ease-in-out infinite alternate;
-  }
-
-  @keyframes drift {
-    to { transform: translate(100px, 150px); }
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
-
-  /* ── HEADER ── */
-  header {
-    text-align: center;
-    margin-bottom: 3rem;
-    padding-top: 2rem;
-  }
-
-  .badge {
-    display: inline-block;
-    font-size: 0.65rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    border: 1px solid rgba(0,212,255,0.3);
-    padding: 0.3rem 1rem;
-    border-radius: 2px;
-    margin-bottom: 1.5rem;
-    animation: fadeDown 0.6s ease both;
-  }
-
-  h1 {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    animation: fadeDown 0.6s 0.1s ease both;
-  }
-
-  h1 span {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .subtitle {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    margin-top: 0.8rem;
-    animation: fadeDown 0.6s 0.2s ease both;
-  }
-
-  @keyframes fadeDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── STEPS NAV ── */
-  .steps-nav {
-    display: flex;
-    gap: 0;
-    margin-bottom: 2.5rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    animation: fadeDown 0.6s 0.3s ease both;
-  }
-
-  .step-btn {
-    flex: 1;
-    padding: 0.9rem 0.5rem;
-    background: var(--surface);
-    border: none;
-    border-right: 1px solid var(--border);
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    cursor: pointer;
-    transition: all 0.25s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    letter-spacing: 0.04em;
-  }
-
-  .step-btn:last-child { border-right: none; }
-  .step-btn .step-num {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-dim);
-    transition: color 0.25s;
-  }
-
-  .step-btn.active {
-    background: var(--surface2);
-    color: var(--accent);
-  }
-  .step-btn.active .step-num { color: var(--accent); }
-  .step-btn.done { color: var(--accent3); }
-  .step-btn.done .step-num { color: var(--accent3); }
-
-  /* ── PANELS ── */
-  .panel {
-    display: none;
-    animation: panelIn 0.4s ease;
-  }
-  .panel.active { display: block; }
-
-  @keyframes panelIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── CARDS ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1.5rem;
-    margin-bottom: 1.2rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .card:hover::before { opacity: 1; }
-
-  .card-label {
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .card-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .card h3 {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: var(--text);
-  }
-
-  .card p {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-  }
-
-  /* ── CORPUS INPUT ── */
-  .corpus-area {
-    width: 100%;
-    min-height: 120px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    padding: 1rem;
-    resize: vertical;
-    outline: none;
-    transition: border-color 0.25s;
-    line-height: 1.6;
-  }
-
-  .corpus-area:focus { border-color: var(--accent); }
-  .corpus-area::placeholder { color: var(--text-dim); }
-
-  /* ── INLINE INPUT ── */
-  .input-row {
-    display: flex;
-    gap: 0.6rem;
-    margin-top: 0.8rem;
-  }
-
-  .input-field {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    padding: 0.7rem 1rem;
-    outline: none;
-    transition: border-color 0.25s;
-  }
-
-  .input-field:focus { border-color: var(--accent); }
-
-  /* ── BUTTONS ── */
-  .btn {
-    padding: 0.7rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: var(--bg);
-  }
-  .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
-
-  .btn-secondary {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-  }
-  .btn-secondary:hover { background: rgba(0,212,255,0.08); }
-
-  .btn-purple {
-    background: var(--accent2);
-    color: white;
-  }
-  .btn-purple:hover { filter: brightness(1.2); transform: translateY(-1px); }
-
-  .btn-green {
-    background: var(--accent3);
-    color: var(--bg);
-  }
-  .btn-green:hover { filter: brightness(1.15); transform: translateY(-1px); }
-
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none !important;
-    filter: none !important;
-  }
-
-  /* ── TOKENS DISPLAY ── */
-  .tokens-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 1rem;
-    min-height: 2.5rem;
-    padding: 0.8rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-  }
-
-  .token {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 2px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    animation: tokenPop 0.3s ease both;
-    cursor: default;
-  }
-
-  @keyframes tokenPop {
-    from { opacity: 0; transform: scale(0.7); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-
-  .token-colors {
-    background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3);
-  }
-  .token-color-1 { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
-  .token-color-2 { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
-  .token-color-3 { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
-  .token-color-4 { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
-
-  /* ── PROBABILITY TABLE ── */
-  .prob-table-wrap {
-    overflow-x: auto;
-    margin-top: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.78rem;
-  }
-
-  thead {
-    background: var(--surface2);
-  }
-
-  th {
-    padding: 0.7rem 1rem;
-    text-align: left;
-    color: var(--accent);
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    font-weight: 600;
-    border-bottom: 1px solid var(--border);
-  }
-
-  td {
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid rgba(30,45,71,0.5);
-    color: var(--text);
-    vertical-align: middle;
-  }
-
-  tr:last-child td { border-bottom: none; }
-
-  tr:hover td { background: rgba(0,212,255,0.03); }
-
-  .prob-bar-cell { width: 35%; }
-  .prob-bar-bg {
-    background: var(--border);
-    border-radius: 2px;
-    height: 6px;
-    overflow: hidden;
-  }
-  .prob-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .prob-value {
-    color: var(--accent3);
-    font-weight: 600;
-  }
-
-  .fraction {
-    color: var(--warn);
-    font-size: 0.72rem;
-  }
-
-  /* ── PREDICTION ── */
-  .prediction-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1.2rem 1.5rem;
-    margin-top: 1rem;
-    min-height: 3.5rem;
-    font-size: 1rem;
-    line-height: 1.8;
-    letter-spacing: 0.01em;
-  }
-
-  .word-generated {
-    color: var(--accent);
-    font-weight: 700;
-    animation: wordAppear 0.4s ease both;
-  }
-
-  .word-seed {
-    color: var(--text-muted);
-  }
-
-  @keyframes wordAppear {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── STEP HIGHLIGHT ── */
-  .highlight-box {
-    background: rgba(0,212,255,0.05);
-    border: 1px solid rgba(0,212,255,0.2);
-    border-left: 3px solid var(--accent);
-    padding: 1rem 1.2rem;
-    border-radius: 0 4px 4px 0;
-    margin-top: 1rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-  }
-
-  .highlight-box strong { color: var(--accent); }
-
-  .highlight-box.purple {
-    background: rgba(124,58,237,0.05);
-    border-color: rgba(124,58,237,0.2);
-    border-left-color: var(--accent2);
-  }
-  .highlight-box.purple strong { color: #a78bfa; }
-
-  .highlight-box.green {
-    background: rgba(16,185,129,0.05);
-    border-color: rgba(16,185,129,0.2);
-    border-left-color: var(--accent3);
-  }
-  .highlight-box.green strong { color: var(--accent3); }
-
-  /* ── CORPUS PHRASES LIST ── */
-  .phrases-list {
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .phrase-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.5rem 0.8rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    animation: slideIn 0.3s ease both;
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  .phrase-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent3);
-    flex-shrink: 0;
-  }
-
-  .phrase-delete {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 0 0.2rem;
-    transition: color 0.2s;
-  }
-  .phrase-delete:hover { color: #ef4444; }
-
-  /* ── STATS ROW ── */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
-    margin-top: 1rem;
-  }
-
-  .stat-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1rem;
-    text-align: center;
-  }
-
-  .stat-num {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--accent);
-    display: block;
-    line-height: 1;
-    margin-bottom: 0.3rem;
-  }
-
-  .stat-label {
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  /* ── WORD SELECTOR ── */
-  .word-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.8rem;
-    padding: 0.8rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    min-height: 3rem;
-  }
-
-  .word-chip {
-    padding: 0.25rem 0.7rem;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .word-chip:hover {
-    background: rgba(0,212,255,0.1);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* ── SECTION TITLE ── */
-  .section-title {
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-  }
-
-  .section-desc {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
-  }
-
-  /* ── EQUATION DISPLAY ── */
-  .equation {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    padding: 0.8rem 1.2rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--warn);
-    margin: 0.5rem 0;
-    letter-spacing: 0.02em;
-  }
-
-  /* ── REFLECTION ── */
-  .question-card {
-    padding: 1rem 1.2rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    margin-bottom: 0.6rem;
-    display: flex;
-    gap: 0.8rem;
-    align-items: flex-start;
-  }
-
-  .q-icon {
-    font-size: 1.2rem;
-    flex-shrink: 0;
-    margin-top: 0.05rem;
-  }
-
-  .q-text {
-    font-size: 0.82rem;
-    color: var(--text);
-    line-height: 1.6;
-  }
-
-  .q-text strong { color: var(--accent); }
-
-  /* ── FOOTER ── */
-  footer {
-    text-align: center;
-    padding-top: 3rem;
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  /* ── STATUS MSG ── */
-  .status-msg {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-    min-height: 1.2rem;
-    transition: color 0.3s;
-  }
-  .status-msg.ok { color: var(--accent3); }
-  .status-msg.err { color: #ef4444; }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 600px) {
-    .stats-row { grid-template-columns: repeat(3, 1fr); }
-    .step-btn { font-size: 0.6rem; padding: 0.7rem 0.3rem; }
-    h1 { font-size: 1.8rem; }
-  }
-
-  /* ── PULSE ANIMATION ── */
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
-    50% { box-shadow: 0 0 0 8px rgba(0,212,255,0); }
-  }
-
-  .pulse { animation: pulse-glow 2s infinite; }
-
-  /* ── N-gram filter indicator ── */
-  .filter-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.8rem;
-    flex-wrap: wrap;
-  }
-  .filter-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .filter-chip {
-    padding: 0.2rem 0.6rem;
-    border-radius: 2px;
-    font-size: 0.72rem;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    background: var(--surface);
-    transition: all 0.2s;
-    font-family: var(--font-mono);
-  }
-  .filter-chip.active {
-    background: rgba(0,212,255,0.12);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+:root {
+  --bg: #050810;
+  --surface: #0b1120;
+  --surface2: #101928;
+  --border: #1a2840;
+  --accent: #00d4ff;
+  --purple: #7c3aed;
+  --green: #10b981;
+  --warn: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --dim: #1e3a5f;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-disp: 'Syne', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  width:100%; height:100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* Grid overlay */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events:none; z-index:0;
+}
+
+/* ── LAYOUT ── */
+.app {
+  position:relative; z-index:1;
+  width:100%; height:100vh;
+  display:grid;
+  grid-template-rows: 64px 1fr 58px;
+}
+
+/* ── HEADER ── */
+header {
+  display:flex;
+  align-items:center;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,8,16,0.9);
+  backdrop-filter: blur(10px);
+}
+
+.header-title {
+  font-family: var(--font-disp);
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+
+.phase-pills {
+  display:flex;
+  gap: 0.4rem;
+}
+
+.phase-pill {
+  padding: 0.25rem 0.8rem;
+  border-radius: 100px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all 0.25s;
+}
+.phase-pill.active {
+  background: rgba(0,212,255,0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.phase-pill.done {
+  background: rgba(16,185,129,0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.live-counter {
+  display:flex;
+  align-items:center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0.3rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+}
+
+.live-counter .num {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+.live-counter.bump .num { animation: numBump 0.4s ease; }
+@keyframes numBump {
+  0%   { transform:scale(1); }
+  40%  { transform:scale(1.5); color:#fff; }
+  100% { transform:scale(1); }
+}
+
+.live-dot {
+  width:7px; height:7px;
+  background: var(--green);
+  border-radius:50%;
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(16,185,129,0.4); }
+  50%      { opacity:0.6; box-shadow:0 0 0 6px rgba(16,185,129,0); }
+}
+
+/* QR mini in header */
+#qrMini { width:40px; height:40px; flex-shrink:0; cursor:pointer; }
+#qrMini img, #qrMini canvas { width:40px !important; height:40px !important; border-radius:4px; }
+
+/* ── MAIN ── */
+main {
+  position:relative;
+  overflow:hidden;
+}
+
+.phase {
+  position:absolute; inset:0;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity 0.4s ease;
+}
+.phase.active {
+  opacity:1;
+  pointer-events:all;
+}
+
+/* ─── PHASE 0: CORPUS ─── */
+#phase0 {
+  display:grid;
+  grid-template-columns: 360px 1fr;
+}
+
+.qr-panel {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding: 2rem;
+  border-right: 1px solid var(--border);
+  gap: 1.2rem;
+}
+
+.qr-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+#qrLarge {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+}
+#qrLarge canvas, #qrLarge img { display:block; }
+
+.join-url {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align:center;
+  word-break: break-all;
+  max-width: 280px;
+}
+.join-url strong { color: var(--accent); }
+
+.qr-instruction {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align:center;
+  line-height: 1.6;
+  max-width: 240px;
+}
+
+.stream-panel {
+  display:flex;
+  flex-direction:column;
+  padding: 1.5rem;
+  gap: 1rem;
+  overflow:hidden;
+}
+
+.stream-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.stream-title {
+  font-family: var(--font-disp);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.phrase-stream {
+  flex:1;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column-reverse;
+  gap: 0.5rem;
+  padding-right: 0.3rem;
+}
+
+.phrase-stream::-webkit-scrollbar { width:3px; }
+.phrase-stream::-webkit-scrollbar-thumb { background:var(--border); }
+
+.stream-phrase {
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+  color: var(--text);
+  animation: slideInPhrase 0.4s cubic-bezier(0.16,1,0.3,1) both;
+  line-height: 1.5;
+}
+
+@keyframes slideInPhrase {
+  from { opacity:0; transform: translateX(-20px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+.corpus-stats-row {
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 0.6rem;
+}
+
+.corpus-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.8rem;
+  text-align:center;
+}
+.corpus-stat .big {
+  font-family: var(--font-disp);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  display:block;
+  line-height:1;
+}
+.corpus-stat .lbl {
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
+
+/* ─── PHASE 1: TRAINING ─── */
+#phase1 {
+  display:grid;
+  grid-template-columns: 1fr 280px;
+}
+
+.graph-container {
+  position:relative;
+  overflow:hidden;
+}
+
+#trainSvg {
+  width:100%; height:100%;
+}
+
+/* Training overlay */
+.train-overlay {
+  position:absolute;
+  bottom:1rem; left:1rem; right:1rem;
+  display:flex;
+  align-items:center;
+  gap: 1rem;
+}
+
+.train-status {
+  flex:1;
+  background: rgba(5,8,16,0.85);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  backdrop-filter:blur(8px);
+}
+.train-status strong { color: var(--accent); }
+
+.train-progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow:hidden;
+  margin-top: 0.5rem;
+}
+.train-progress-fill {
+  height:100%;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  border-radius:2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* Train side panel */
+.train-side {
+  border-left: 1px solid var(--border);
+  padding: 1.2rem;
+  display:flex;
+  flex-direction:column;
+  gap: 0.8rem;
+  overflow-y:auto;
+}
+
+.side-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.bigram-log {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap: 0.35rem;
+  overflow-y: auto;
+  max-height: 300px;
+}
+.bigram-log::-webkit-scrollbar { width:2px; }
+.bigram-log::-webkit-scrollbar-thumb { background:var(--border); }
+
+.bigram-entry {
+  display:flex;
+  align-items:center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--surface);
+  border-radius: 4px;
+  animation: fadeSlide 0.3s ease both;
+  border: 1px solid transparent;
+}
+.bigram-entry.new { border-color: rgba(0,212,255,0.3); }
+
+@keyframes fadeSlide {
+  from { opacity:0; transform:translateX(8px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.bigram-from { color: var(--accent); font-weight:600; }
+.bigram-arr  { color: var(--muted); }
+.bigram-to   { color: var(--purple); font-weight:600; }
+.bigram-cnt  { margin-left:auto; color: var(--warn); font-size:0.65rem; }
+
+.math-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.9rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.math-box .eq {
+  font-size: 0.72rem;
+  color: var(--warn);
+  margin-top: 0.4rem;
+  display:block;
+}
+.math-box strong { color: var(--accent); }
+
+/* ─── PHASE 2: PREDICTION ─── */
+#phase2 {
+  display:grid;
+  grid-template-columns: 1fr 320px;
+}
+
+#predictSvg {
+  width:100%; height:100%;
+}
+
+.predict-panel {
+  border-left: 1px solid var(--border);
+  padding: 1.2rem;
+  display:flex;
+  flex-direction:column;
+  gap: 0.8rem;
+  overflow-y:auto;
+}
+
+.predict-panel::-webkit-scrollbar { width:2px; }
+
+.seed-row {
+  display:flex;
+  gap: 0.5rem;
+}
+
+.seed-input {
+  flex:1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.6rem 0.8rem;
+  outline:none;
+  transition: border-color 0.2s;
+}
+.seed-input:focus { border-color: var(--accent); }
+
+.predict-btn {
+  padding: 0.6rem 1rem;
+  background: var(--purple);
+  border:none;
+  border-radius: 4px;
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor:pointer;
+  transition: all 0.2s;
+  white-space:nowrap;
+}
+.predict-btn:hover { filter:brightness(1.2); }
+.predict-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+.steps-log {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap: 0.3rem;
+  overflow-y:auto;
+  max-height:220px;
+  padding-right:2px;
+}
+.steps-log::-webkit-scrollbar { width:2px; }
+
+.step-entry {
+  padding: 0.4rem 0.6rem;
+  background: var(--surface);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  animation: fadeSlide 0.3s ease both;
+  line-height:1.5;
+}
+
+.step-from  { color: var(--accent); font-weight:600; }
+.step-to    { color: var(--green);  font-weight:700; }
+.step-prob  { color: var(--warn);   font-weight:600; }
+.step-frac  { color: var(--muted);  font-size:0.65rem; }
+
+.generated-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  min-height: 60px;
+}
+
+.gen-word-seed  { color: var(--muted); }
+.gen-word-new {
+  color: var(--accent);
+  font-weight: 700;
+  animation: wordPop 0.4s ease both;
+}
+@keyframes wordPop {
+  from { opacity:0; transform:translateY(4px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.prob-bars {
+  display:flex;
+  flex-direction:column;
+  gap: 0.3rem;
+}
+.prob-row {
+  display:flex;
+  align-items:center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  animation: fadeSlide 0.25s ease both;
+}
+.prob-word {
+  width: 80px;
+  flex-shrink:0;
+  color: var(--text);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prob-bar-bg {
+  flex:1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow:hidden;
+}
+.prob-bar-fg {
+  height:100%;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  border-radius:3px;
+  transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.prob-bar-fg.selected {
+  background: linear-gradient(90deg, var(--green), #059669);
+}
+.prob-pct {
+  width: 36px;
+  text-align:right;
+  color: var(--warn);
+  font-weight:600;
+  font-size: 0.65rem;
+}
+
+/* ── FOOTER NAV ── */
+footer {
+  display:flex;
+  align-items:center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  border-top: 1px solid var(--border);
+  background: rgba(5,8,16,0.95);
+}
+
+.nav-btn {
+  padding: 0.5rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nav-btn.active {
+  background: rgba(0,212,255,0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.nav-btn.danger {
+  border-color: rgba(239,68,68,0.4);
+  color: #ef4444;
+}
+.nav-btn.danger:hover {
+  background: rgba(239,68,68,0.1);
+  border-color: #ef4444;
+}
+
+.speed-control {
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+.speed-slider {
+  width: 80px;
+  accent-color: var(--accent);
+}
+
+/* ── D3 GRAPH STYLES ── */
+.node circle {
+  cursor: pointer;
+  transition: r 0.2s;
+}
+.node text {
+  pointer-events:none;
+  user-select:none;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.link {
+  fill:none;
+  stroke: var(--purple);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.link.visible { opacity: 0.6; }
+.link.highlighted { opacity: 1; stroke: var(--warn); stroke-width: 4px; }
+.link.path-active  { opacity: 1; stroke: var(--green); stroke-width: 5px; }
+
+.node circle { opacity:0; transition: opacity 0.4s, r 0.2s; }
+.node circle.visible { opacity:1; }
+.node circle.active-node { filter: drop-shadow(0 0 12px var(--warn)); }
+.node circle.path-node  { filter: drop-shadow(0 0 14px var(--green)); }
+
+.node text { opacity:0; transition: opacity 0.4s; }
+.node text.visible { opacity:1; }
+
+/* Traveling ball */
+.travel-ball {
+  fill: var(--warn);
+  filter: drop-shadow(0 0 8px var(--warn));
+}
+
+/* ── PHRASE SPOTLIGHT ── */
+.phrase-spotlight {
+  position:absolute;
+  top: 1rem; left:50%;
+  transform: translateX(-50%);
+  background: rgba(5,8,16,0.9);
+  border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+  backdrop-filter: blur(8px);
+  max-width: 90%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  pointer-events:none;
+}
+.phrase-spotlight.visible { opacity:1; }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="app">
 
+  <!-- ── HEADER ── -->
   <header>
-    <div class="badge">Día Mundial de las Matemáticas · Medellín 2026</div>
-    <h1>¿Cómo <span>piensa</span> la IA?</h1>
-    <p class="subtitle">Taller interactivo · Abriendo la caja negra de la IA generativa</p>
+    <div class="header-title">¿Cómo piensa la IA?</div>
+
+    <div class="phase-pills">
+      <span class="phase-pill active" id="pill0">01 · Corpus</span>
+      <span class="phase-pill" id="pill1">02 · Entrenar</span>
+      <span class="phase-pill" id="pill2">03 · Predecir</span>
+    </div>
+
+    <div class="live-counter" id="liveCounter">
+      <div class="live-dot"></div>
+      <span class="num" id="counterNum">0</span>&nbsp;frases
+    </div>
+
+    <div id="qrMini" title="Click para agrandar QR"></div>
   </header>
 
-  <!-- STEP NAVIGATION -->
-  <div class="steps-nav">
-    <button class="step-btn active" onclick="goTo(0)" id="stepbtn-0">
-      <span class="step-num">01</span>Corpus
-    </button>
-    <button class="step-btn" onclick="goTo(1)" id="stepbtn-1">
-      <span class="step-num">02</span>Tokens
-    </button>
-    <button class="step-btn" onclick="goTo(2)" id="stepbtn-2">
-      <span class="step-num">03</span>Probabilidades
-    </button>
-    <button class="step-btn" onclick="goTo(3)" id="stepbtn-3">
-      <span class="step-num">04</span>Predicción
-    </button>
-    <button class="step-btn" onclick="goTo(4)" id="stepbtn-4">
-      <span class="step-num">05</span>Reflexión
-    </button>
-  </div>
+  <!-- ── MAIN ── -->
+  <main>
 
-  <!-- ═══════════════════════════════════════════
-       PANEL 0 — CORPUS
-  ════════════════════════════════════════════ -->
-  <div class="panel active" id="panel-0">
-    <div class="section-title">Paso 1 · Construimos el corpus</div>
-    <p class="section-desc">
-      El corpus es el conjunto de textos con el que la IA aprende. Hoy, <strong>ustedes son el corpus</strong>.<br>
-      Cada mesa escribe frases sobre matemáticas. Estas frases serán el "conocimiento" de nuestro modelo.
-    </p>
-
-    <div class="card">
-      <div class="card-label">Agregar frase al corpus</div>
-      <textarea class="corpus-area" id="phraseInput" placeholder="Escribe una frase sobre matemáticas...&#10;Ej: La suma de los ángulos de un triángulo es ciento ochenta grados&#10;Ej: El área del círculo depende del radio&#10;Ej: La derivada mide la tasa de cambio de una función"></textarea>
-      <div class="input-row">
-        <button class="btn btn-primary pulse" onclick="addPhrase()">+ Agregar frase</button>
-        <button class="btn btn-secondary" onclick="addExamples()">Cargar ejemplos</button>
-      </div>
-      <div class="status-msg" id="corpusStatus"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Corpus actual</div>
-      <div class="stats-row">
-        <div class="stat-box">
-          <span class="stat-num" id="statPhrases">0</span>
-          <span class="stat-label">Frases</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-num" id="statWords">0</span>
-          <span class="stat-label">Palabras</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-num" id="statVocab">0</span>
-          <span class="stat-label">Vocabulario</span>
+    <!-- PHASE 0: CORPUS -->
+    <div class="phase active" id="phase0">
+      <div class="qr-panel">
+        <div class="qr-label">Escanea para participar</div>
+        <div id="qrLarge"></div>
+        <div class="join-url" id="joinUrlDisplay"></div>
+        <div class="qr-instruction">
+          Abre la cámara de tu celular,<br>
+          escanea el código y escribe<br>
+          una frase sobre matemáticas
         </div>
       </div>
-      <div class="phrases-list" id="phrasesList">
-        <div style="color:var(--text-dim);font-size:0.75rem;padding:0.5rem">Aún no hay frases. ¡Agrégalas arriba!</div>
+
+      <div class="stream-panel">
+        <div class="stream-header">
+          <span class="stream-title">Corpus construyéndose en vivo</span>
+        </div>
+        <div class="corpus-stats-row">
+          <div class="corpus-stat">
+            <span class="big" id="st0">0</span>
+            <span class="lbl">Frases</span>
+          </div>
+          <div class="corpus-stat">
+            <span class="big" id="st1">0</span>
+            <span class="lbl">Palabras</span>
+          </div>
+          <div class="corpus-stat">
+            <span class="big" id="st2">0</span>
+            <span class="lbl">Vocabulario</span>
+          </div>
+        </div>
+        <div class="phrase-stream" id="phraseStream"></div>
       </div>
     </div>
 
-    <div class="highlight-box">
-      <strong>📐 Conexión matemática:</strong> El corpus es como una <strong>muestra estadística</strong>.
-      Cuantas más frases agreguemos, más representativa será la distribución de palabras que aprenderá el modelo.
-      Igual que en estadística: más datos → mejores estimaciones.
-    </div>
-
-    <div style="margin-top:1.5rem;display:flex;justify-content:flex-end">
-      <button class="btn btn-primary" onclick="trainAndNext()" id="btnTrainNext" disabled>
-        Entrenar modelo → Paso 2
-      </button>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════
-       PANEL 1 — TOKENIZACIÓN
-  ════════════════════════════════════════════ -->
-  <div class="panel" id="panel-1">
-    <div class="section-title">Paso 2 · Tokenización</div>
-    <p class="section-desc">
-      Antes de aprender, la IA divide el texto en piezas llamadas <strong>tokens</strong>.
-      En modelos sencillos como el nuestro, cada token es una palabra. En ChatGPT, son fragmentos de palabras.
-    </p>
-
-    <div class="card">
-      <div class="card-label">Selecciona una frase del corpus para tokenizar</div>
-      <div class="word-selector" id="phraseSelector"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Resultado de la tokenización</div>
-      <div class="tokens-display" id="tokensDisplay">
-        <span style="color:var(--text-dim);font-size:0.75rem">Selecciona una frase arriba</span>
+    <!-- PHASE 1: TRAINING -->
+    <div class="phase" id="phase1">
+      <div class="graph-container">
+        <svg id="trainSvg"></svg>
+        <div class="phrase-spotlight" id="phraseSpotlight"></div>
+        <div class="train-overlay">
+          <div class="train-status" id="trainStatus">
+            <strong>Listo para entrenar</strong> — presiona el botón cuando quieras
+            <div class="train-progress"><div class="train-progress-fill" id="trainBar"></div></div>
+          </div>
+        </div>
       </div>
-      <div class="highlight-box" style="margin-top:1rem">
-        <strong>💡 ¿Qué hace la tokenización?</strong><br>
-        Convierte texto → lista de unidades numéricas. El modelo nunca ve letras: ve <strong>números (índices)</strong>.
-        Cada token tiene un ID único en el vocabulario.
-        <div class="equation" style="margin-top:0.6rem">
-          "La" → 0 &nbsp;|&nbsp; "suma" → 1 &nbsp;|&nbsp; "de" → 2 &nbsp;|&nbsp; ...
+      <div class="train-side">
+        <div class="side-title">Bigramas aprendidos</div>
+        <div class="bigram-log" id="bigramLog"></div>
+        <div class="math-box">
+          <strong>Probabilidad condicional</strong>
+          <span class="eq">P(B | A) = count(A→B) / count(A)</span>
+          Cada flecha = par de palabras consecutivas aprendido del corpus
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-label">Vocabulario completo del corpus</div>
-      <div id="vocabDisplay" class="tokens-display"></div>
-      <div class="highlight-box purple" style="margin-top:1rem">
-        <strong>📐 Conexión matemática:</strong> El vocabulario es un <strong>conjunto finito V</strong>.
-        La tokenización es una función biyectiva <em>f: palabras → {0, 1, 2, ..., |V|-1}</em>.
-        ¡Matemáticas discretas en acción!
+    <!-- PHASE 2: PREDICTION -->
+    <div class="phase" id="phase2">
+      <div class="graph-container">
+        <svg id="predictSvg"></svg>
+      </div>
+      <div class="predict-panel">
+        <div class="side-title">Generación de texto</div>
+
+        <div class="seed-row">
+          <input class="seed-input" id="seedInput" placeholder="Palabra semilla..." />
+          <button class="predict-btn" id="predictBtn" onclick="startPrediction()">▶ PREDECIR</button>
+        </div>
+
+        <div class="side-title" style="margin-top:0.2rem">Opciones en este paso</div>
+        <div class="prob-bars" id="probBars"></div>
+
+        <div class="side-title" style="margin-top:0.2rem">Decisiones del modelo</div>
+        <div class="steps-log" id="stepsLog"></div>
+
+        <div class="side-title" style="margin-top:0.2rem">Texto generado</div>
+        <div class="generated-box" id="generatedBox">
+          <span style="color:var(--muted)">El texto aparecerá aquí...</span>
+        </div>
       </div>
     </div>
 
-    <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
-      <button class="btn btn-secondary" onclick="goTo(0)">← Volver</button>
-      <button class="btn btn-primary" onclick="goTo(2)">Ver probabilidades → Paso 3</button>
+  </main>
+
+  <!-- ── FOOTER NAV ── -->
+  <footer>
+    <button class="nav-btn active" id="navBtn0" onclick="setPhase(0)">📡 CORPUS EN VIVO</button>
+    <button class="nav-btn" id="navBtn1" onclick="goToTrain()">🧪 ENTRENAR MODELO</button>
+    <button class="nav-btn" id="navBtn2" onclick="setPhase(2)">🔮 PREDECIR</button>
+    <button class="nav-btn danger" onclick="resetCorpus()">↺ RESET</button>
+
+    <div class="speed-control">
+      Velocidad animación:
+      <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="3">
     </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════
-       PANEL 2 — PROBABILIDADES
-  ════════════════════════════════════════════ -->
-  <div class="panel" id="panel-2">
-    <div class="section-title">Paso 3 · La tabla de probabilidades</div>
-    <p class="section-desc">
-      Aquí está <strong>el corazón de la IA generativa</strong>. El modelo aprende a preguntarse:
-      dado que acabo de ver esta palabra, ¿cuál es la más probable que venga después?
-    </p>
-
-    <div class="card">
-      <div class="card-label">Selecciona una palabra para ver sus sucesores</div>
-      <div class="filter-row">
-        <span class="filter-label">Palabra inicial:</span>
-        <div id="wordFilterChips" style="display:flex;flex-wrap:wrap;gap:0.4rem"></div>
-      </div>
-      <div class="prob-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Palabra actual</th>
-              <th>Palabra siguiente</th>
-              <th>Frecuencia</th>
-              <th>Probabilidad</th>
-              <th class="prob-bar-cell">Distribución</th>
-            </tr>
-          </thead>
-          <tbody id="probTableBody">
-            <tr><td colspan="5" style="color:var(--text-dim);text-align:center;padding:1.5rem">Selecciona una palabra arriba</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="highlight-box">
-      <strong>📐 Conexión matemática:</strong> Esto es una <strong>distribución de probabilidad condicional</strong>:
-      <div class="equation">P(palabra_siguiente | palabra_actual) = frecuencia(par) / frecuencia(actual)</div>
-      La suma de todas las probabilidades de una fila siempre es <strong>1</strong> (100%). ¡Distribución de probabilidad discreta!
-    </div>
-
-    <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
-      <button class="btn btn-secondary" onclick="goTo(1)">← Volver</button>
-      <button class="btn btn-primary" onclick="goTo(3)">Generar predicciones → Paso 4</button>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════
-       PANEL 3 — PREDICCIÓN
-  ════════════════════════════════════════════ -->
-  <div class="panel" id="panel-3">
-    <div class="section-title">Paso 4 · El modelo predice</div>
-    <p class="section-desc">
-      Ahora el modelo usa todo lo que aprendió para <strong>completar frases</strong>.
-      Escribe una palabra semilla y observa cómo el modelo genera texto, paso a paso, usando probabilidades.
-    </p>
-
-    <div class="card">
-      <div class="card-label">Palabras de inicio disponibles</div>
-      <div class="word-selector" id="seedChips"></div>
-      <div class="input-row" style="margin-top:1rem">
-        <input class="input-field" id="seedInput" placeholder="O escribe una palabra semilla..." />
-        <input class="input-field" id="lengthInput" type="number" value="8" min="3" max="20" style="max-width:80px" title="Longitud" />
-        <button class="btn btn-purple" onclick="generateText()">Generar ✦</button>
-      </div>
-      <div class="status-msg" id="genStatus"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Texto generado</div>
-      <div class="prediction-box" id="predictionBox">
-        <span style="color:var(--text-dim)">El texto generado aparecerá aquí...</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Decisiones tomadas por el modelo (paso a paso)</div>
-      <div id="decisionsLog" style="font-size:0.75rem;color:var(--text-muted);line-height:2">
-        <span style="color:var(--text-dim)">Las decisiones aparecerán aquí...</span>
-      </div>
-    </div>
-
-    <div class="highlight-box green">
-      <strong>🧠 La gran revelación:</strong> El modelo no "entiende" matemáticas ni "piensa".
-      En cada paso <strong>elige la siguiente palabra según probabilidades</strong> aprendidas de tu corpus.
-      Es estadística aplicada, no magia. <strong>Y ese corpus lo crearon ustedes.</strong>
-    </div>
-
-    <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
-      <button class="btn btn-secondary" onclick="goTo(2)">← Volver</button>
-      <button class="btn btn-green" onclick="goTo(4)">Reflexión final →</button>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════
-       PANEL 4 — REFLEXIÓN
-  ════════════════════════════════════════════ -->
-  <div class="panel" id="panel-4">
-    <div class="section-title">Paso 5 · Reflexión</div>
-    <p class="section-desc">
-      Han construido y visto funcionar un modelo de IA generativa. Ahora las preguntas importantes:
-    </p>
-
-    <div class="question-card">
-      <div class="q-icon">🎲</div>
-      <div class="q-text">
-        <strong>¿La IA "sabe" matemáticas?</strong><br>
-        No. Aprendió patrones estadísticos de texto. Si el corpus tiene errores, el modelo genera errores.
-        ChatGPT funciona igual — pero con miles de millones de textos.
-      </div>
-    </div>
-
-    <div class="question-card">
-      <div class="q-icon">📊</div>
-      <div class="q-text">
-        <strong>¿Qué pasaría si agregamos frases incorrectas al corpus?</strong><br>
-        El modelo aprendería a generar frases incorrectas con alta probabilidad. <strong>Garbage in, garbage out.</strong>
-        La calidad del dato es todo en IA.
-      </div>
-    </div>
-
-    <div class="question-card">
-      <div class="q-icon">🔢</div>
-      <div class="q-text">
-        <strong>¿Dónde están las matemáticas en la IA real?</strong><br>
-        Probabilidad condicional · Álgebra lineal (vectores y matrices) · Cálculo (gradiente descendente) ·
-        Estadística (distribuciones). <strong>La IA es matemáticas aplicadas.</strong>
-      </div>
-    </div>
-
-    <div class="question-card">
-      <div class="q-icon">🏫</div>
-      <div class="q-text">
-        <strong>¿Cómo pueden usar esto en sus clases?</strong><br>
-        Pueden construir este mismo ejercicio con frases de sus estudiantes para enseñar
-        <strong>probabilidad condicional, fracciones y estadística</strong> de forma aplicada y motivadora.
-      </div>
-    </div>
-
-    <div class="question-card">
-      <div class="q-icon">⚠️</div>
-      <div class="q-text">
-        <strong>¿Cuál es el límite de nuestro modelo vs ChatGPT?</strong><br>
-        Nuestro modelo usa bigramas (1 palabra de contexto). GPT-4 usa ventanas de
-        <strong>128.000 tokens</strong> de contexto, con 175.000 millones de parámetros.
-        Pero el principio probabilístico es el <strong>mismo</strong>.
-      </div>
-    </div>
-
-    <div class="highlight-box" style="margin-top:1.5rem">
-      <strong>✦ La idea que se llevan hoy:</strong><br>
-      La IA generativa no piensa, no entiende, no siente. Es un <strong>motor de predicción estadística</strong>
-      entrenado con datos humanos. Sus respuestas son tan buenas o malas como los datos con que fue entrenada.
-      Y las matemáticas son el lenguaje en el que está escrita.
-    </div>
-
-    <div class="card" style="margin-top:1.5rem;text-align:center">
-      <div class="card-label">¿Quieres volver a experimentar?</div>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">
-        Modifica el corpus, agrega frases nuevas y observa cómo cambia el comportamiento del modelo.
-      </p>
-      <button class="btn btn-primary" onclick="resetAll()">↺ Reiniciar con nuevo corpus</button>
-    </div>
-
-    <footer>
-      Taller · Humanizando la Enseñanza de las Matemáticas · Medellín 2026<br>
-      Modelo: Cadena de Markov (bigramas) · Sin librerías externas · 100% matemáticas
-    </footer>
-  </div>
+  </footer>
 
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════
-//  CONFIG — apunta a la API
-//  En desarrollo local: cambia a "http://localhost:8000"
-//  En Vercel: "" (misma origin)
-// ═══════════════════════════════════════════════════
-const API = "";   // ← vacío = misma URL que el frontend
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+const API = "";
+const JOIN_URL = window.location.origin + "/join";
 
-// ═══════════════════════════════════════════════════
-//  STATE (UI cache — la fuente de verdad es la API)
-// ═══════════════════════════════════════════════════
-let corpus = [];
-let vocab  = [];
-let currentStep = 0;
-let selectedFilterWord = null;
+// Animation speed (ms per bigram) based on slider
+function getSpeed() {
+  const v = parseInt(document.getElementById('speedSlider').value);
+  return [600, 400, 250, 120, 50][v - 1];
+}
 
-// ── fetch helper ─────────────────────────────────
-async function api(path, opts = {}) {
-  const res = await fetch(API + path, {
-    headers: { "Content-Type": "application/json" },
-    ...opts,
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+let currentPhase  = 0;
+let corpusCache   = [];
+let modelCache    = null;  // { word: { nextWord: { count, prob } } }
+let trainRunning  = false;
+let predictRunning = false;
+let trainSimulation = null;
+let predictSimulation = null;
+let trainNodes = [], trainLinks = [];
+let graphInitialized = false;
+
+// ════════════════════════════════════════════════════════
+//  QR CODE GENERATION
+// ════════════════════════════════════════════════════════
+function initQR() {
+  // Large QR for phase 0
+  new QRCode(document.getElementById("qrLarge"), {
+    text: JOIN_URL,
+    width: 200, height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || res.statusText);
+
+  // Mini QR in header
+  new QRCode(document.getElementById("qrMini"), {
+    text: JOIN_URL,
+    width: 40, height: 40,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.L
+  });
+
+  // Show URL
+  document.getElementById("joinUrlDisplay").innerHTML =
+    `<strong>${window.location.hostname}</strong>/join`;
+}
+
+// ════════════════════════════════════════════════════════
+//  PHASE MANAGEMENT
+// ════════════════════════════════════════════════════════
+function setPhase(n) {
+  currentPhase = n;
+  document.querySelectorAll('.phase').forEach((p, i) => {
+    p.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.nav-btn:not(.danger)').forEach((b, i) => {
+    b.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.phase-pill').forEach((p, i) => {
+    p.classList.remove('active', 'done');
+    if (i === n) p.classList.add('active');
+    else if (i < n) p.classList.add('done');
+  });
+}
+
+async function goToTrain() {
+  setPhase(1);
+  if (!graphInitialized) {
+    await loadModel();
+    buildTrainGraph();
   }
-  return res.json();
 }
 
-// ═══════════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════════
-function goTo(step) {
-  document.querySelectorAll('.panel').forEach((p, i) => {
-    p.classList.toggle('active', i === step);
-  });
-  document.querySelectorAll('.step-btn').forEach((b, i) => {
-    b.classList.remove('active', 'done');
-    if (i === step) b.classList.add('active');
-    else if (i < step) b.classList.add('done');
-  });
-  currentStep = step;
-  if (step === 1) renderTokenPanel();
-  if (step === 2) renderProbPanel();
-  if (step === 3) renderPredPanel();
-}
-
-// ═══════════════════════════════════════════════════
-//  CORPUS — conectado a la API
-// ═══════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════════════
 async function loadCorpus() {
   try {
-    const data = await api("/api/corpus");
-    corpus = data.phrases;
-    vocab  = data.stats.vocab;
-    renderCorpusUI(data);
-  } catch(e) {
-    setStatus('corpusStatus', `Error cargando corpus: ${e.message}`, 'err');
-  }
-}
+    const data = await fetch(`${API}/api/corpus`).then(r => r.json());
 
-async function addPhrase() {
-  const input = document.getElementById('phraseInput');
-  const raw = input.value.trim();
-  if (!raw) return setStatus('corpusStatus', 'Escribe una frase primero.', 'err');
-  if (raw.split(/\s+/).length < 3) return setStatus('corpusStatus', 'La frase debe tener al menos 3 palabras.', 'err');
+    const oldLen = corpusCache.length;
+    corpusCache  = data.phrases;
 
-  setStatus('corpusStatus', 'Guardando...', '');
-  try {
-    await api("/api/corpus/add", {
-      method: "POST",
-      body: JSON.stringify({ phrase: raw }),
-    });
-    input.value = '';
-    await loadCorpus();
-    setStatus('corpusStatus', `✓ Frase agregada. Total: ${corpus.length}`, 'ok');
-  } catch(e) {
-    setStatus('corpusStatus', `Error: ${e.message}`, 'err');
-  }
-}
-
-document.getElementById('phraseInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addPhrase(); }
-});
-
-async function addExamples() {
-  const examples = [
-    "La suma de los ángulos interiores de un triángulo es ciento ochenta grados",
-    "El área del círculo se calcula multiplicando pi por el radio al cuadrado",
-    "La derivada mide la tasa de cambio instantánea de una función",
-    "La probabilidad de un evento es el cociente entre casos favorables y casos posibles",
-    "Una función lineal tiene la forma de a por equis más b",
-    "El teorema de Pitágoras relaciona los lados de un triángulo rectángulo",
-    "La suma de una progresión aritmética depende del primer término y la razón",
-    "Los números primos son divisibles únicamente por uno y por sí mismos"
-  ];
-  setStatus('corpusStatus', 'Cargando ejemplos...', '');
-  let added = 0;
-  for (const ex of examples) {
-    if (!corpus.includes(ex)) {
-      try {
-        await api("/api/corpus/add", {
-          method: "POST",
-          body: JSON.stringify({ phrase: ex }),
-        });
-        added++;
-      } catch(_) {}
+    // Update counter
+    const counter = document.getElementById('liveCounter');
+    const oldNum  = parseInt(document.getElementById('counterNum').textContent);
+    document.getElementById('counterNum').textContent = data.stats.total_phrases;
+    if (data.stats.total_phrases !== oldNum) {
+      counter.classList.add('bump');
+      setTimeout(() => counter.classList.remove('bump'), 400);
     }
-  }
-  await loadCorpus();
-  setStatus('corpusStatus', `✓ ${added} ejemplos cargados. Total: ${corpus.length}`, 'ok');
-}
 
-async function removePhrase(i) {
-  try {
-    await api(`/api/corpus/${i}`, { method: "DELETE" });
-    await loadCorpus();
+    // Update stats
+    document.getElementById('st0').textContent = data.stats.total_phrases;
+    document.getElementById('st1').textContent = data.stats.total_words;
+    document.getElementById('st2').textContent = data.stats.vocab_size;
+
+    // Add new phrases to stream
+    if (data.phrases.length > oldLen) {
+      const stream = document.getElementById('phraseStream');
+      for (let i = oldLen; i < data.phrases.length; i++) {
+        const div = document.createElement('div');
+        div.className = 'stream-phrase';
+        div.textContent = data.phrases[i];
+        stream.prepend(div);
+      }
+    }
+
+    return data;
   } catch(e) {
-    setStatus('corpusStatus', `Error: ${e.message}`, 'err');
+    console.error('Corpus load error:', e);
   }
 }
 
-function renderCorpusUI(data) {
-  const list = document.getElementById('phrasesList');
-  if (corpus.length === 0) {
-    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;padding:0.5rem">Aún no hay frases.</div>';
-  } else {
-    list.innerHTML = corpus.map((p, i) =>
-      `<div class="phrase-item">
-        <div class="phrase-dot"></div>
-        <span>${p}</span>
-        <button class="phrase-delete" onclick="removePhrase(${i})">×</button>
-      </div>`
-    ).join('');
-  }
-  document.getElementById('statPhrases').textContent = data.stats.total_phrases;
-  document.getElementById('statWords').textContent   = data.stats.total_words;
-  document.getElementById('statVocab').textContent   = data.stats.vocab_size;
-  document.getElementById('btnTrainNext').disabled   = corpus.length < 2;
-}
-
-// ═══════════════════════════════════════════════════
-//  TRAINING — ahora solo navega (el modelo vive en la API)
-// ═══════════════════════════════════════════════════
-function trainAndNext() {
-  if (corpus.length < 2) return;
-  goTo(1);
-}
-
-// ═══════════════════════════════════════════════════
-//  PANEL 1 — TOKENIZACIÓN (API)
-// ═══════════════════════════════════════════════════
-async function renderTokenPanel() {
-  // Phrase selector
-  const sel = document.getElementById('phraseSelector');
-  sel.innerHTML = corpus.map((p, i) =>
-    `<button class="word-chip" onclick="showTokens(${i})">${p.length > 50 ? p.substring(0,48)+'…' : p}</button>`
-  ).join('');
-
-  // Vocab display desde cache local
-  const vd = document.getElementById('vocabDisplay');
-  const colors = ['token-colors','token-color-1','token-color-2','token-color-3','token-color-4'];
-  vd.innerHTML = vocab.map((w, i) =>
-    `<span class="token ${colors[i % colors.length]}" title="ID: ${i}">${w}</span>`
-  ).join('');
-}
-
-async function showTokens(phraseIdx) {
-  const display = document.getElementById('tokensDisplay');
-  display.innerHTML = '<span style="color:var(--text-dim);font-size:0.75rem">Tokenizando...</span>';
+async function loadModel() {
   try {
-    const data = await api(`/api/model/tokens?phrase=${encodeURIComponent(corpus[phraseIdx])}`);
-    const colors = ['token-colors','token-color-1','token-color-2','token-color-3','token-color-4'];
-    display.innerHTML = '';
-    data.tokens.forEach((t, i) => {
-      setTimeout(() => {
-        const span = document.createElement('span');
-        span.className = `token ${colors[i % colors.length]}`;
-        span.title = `ID: ${t.id}`;
-        span.textContent = t.word;
-        display.appendChild(span);
-      }, i * 80);
-    });
+    const data = await fetch(`${API}/api/model/probabilities`).then(r => r.json());
+    modelCache = data.model;
+    return data.model;
   } catch(e) {
-    display.innerHTML = `<span style="color:#ef4444">${e.message}</span>`;
+    console.error('Model load error:', e);
+    return null;
   }
 }
 
-// ═══════════════════════════════════════════════════
-//  PANEL 2 — PROBABILIDADES (API)
-// ═══════════════════════════════════════════════════
-async function renderProbPanel() {
-  const chips = document.getElementById('wordFilterChips');
-  chips.innerHTML = '<span style="color:var(--text-dim);font-size:0.75rem">Cargando vocabulario...</span>';
-  try {
-    const data = await api("/api/model/probabilities");
-    const words = Object.keys(data.model).sort();
-    chips.innerHTML = words.map(w =>
-      `<button class="filter-chip" onclick="showProbs('${w}')" id="chip-${w.replace(/[^a-z0-9]/g,'_')}">${w}</button>`
-    ).join('');
-  } catch(e) {
-    chips.innerHTML = `<span style="color:#ef4444">${e.message}</span>`;
-  }
-}
-
-async function showProbs(word) {
-  selectedFilterWord = word;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  const chip = document.getElementById(`chip-${word.replace(/[^a-z0-9]/g,'_')}`);
-  if (chip) chip.classList.add('active');
-
-  const tbody = document.getElementById('probTableBody');
-  tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;padding:1rem">Calculando...</td></tr>';
-
-  try {
-    const data = await api(`/api/model/probabilities?word=${encodeURIComponent(word)}`);
-    const rows = Object.entries(data.successors);
-
-    tbody.innerHTML = rows.map(([nxt, info], i) => `
-      <tr>
-        <td>${i === 0 ? `<strong style="color:var(--accent)">${word}</strong>` : `<span style="color:var(--text-dim)">${word}</span>`}</td>
-        <td><strong>${nxt}</strong></td>
-        <td><span class="fraction">${info.count}/${info.total}</span></td>
-        <td><span class="prob-value">${(info.prob * 100).toFixed(1)}%</span></td>
-        <td class="prob-bar-cell">
-          <div class="prob-bar-bg">
-            <div class="prob-bar-fill" style="width:0%" data-target="${(info.prob * 100).toFixed(1)}"></div>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-
-    setTimeout(() => {
-      document.querySelectorAll('.prob-bar-fill').forEach(bar => {
-        bar.style.width = bar.dataset.target + '%';
-      });
-    }, 50);
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;padding:1rem">${e.message}</td></tr>`;
-  }
-}
-
-// ═══════════════════════════════════════════════════
-//  PANEL 3 — PREDICCIÓN (API)
-// ═══════════════════════════════════════════════════
-async function renderPredPanel() {
-  const chips = document.getElementById('seedChips');
-  chips.innerHTML = '<span style="color:var(--text-dim);font-size:0.75rem">Cargando...</span>';
-  try {
-    const data = await api("/api/model/probabilities");
-    const words = Object.keys(data.model).slice(0, 20);
-    chips.innerHTML = words.map(w =>
-      `<button class="word-chip" onclick="useSeed('${w}')">${w}</button>`
-    ).join('');
-  } catch(e) {
-    chips.innerHTML = `<span style="color:#ef4444">${e.message}</span>`;
-  }
-}
-
-function useSeed(word) {
-  document.getElementById('seedInput').value = word;
-  generateText();
-}
-
-async function generateText() {
-  const seedRaw = document.getElementById('seedInput').value.trim().toLowerCase();
-  const length  = parseInt(document.getElementById('lengthInput').value) || 8;
-
-  if (!seedRaw) return setStatus('genStatus', 'Escribe una palabra semilla.', 'err');
-  setStatus('genStatus', 'Generando...', '');
-
-  try {
-    const data = await api("/api/model/generate", {
-      method: "POST",
-      body: JSON.stringify({ seed: seedRaw, length }),
-    });
-
-    // Render text
-    const box = document.getElementById('predictionBox');
-    box.innerHTML = data.words.map((w, i) =>
-      i === 0
-        ? `<span class="word-seed">${w}</span>`
-        : `<span class="word-generated" style="animation-delay:${i * 0.12}s"> ${w}</span>`
-    ).join('');
-
-    // Render decisions
-    const log = document.getElementById('decisionsLog');
-    log.innerHTML = data.steps.map((d, i) =>
-      `<div style="animation:slideIn 0.3s ${i * 0.1}s ease both;opacity:0;animation-fill-mode:both">
-        <span style="color:var(--text-dim)">Paso ${i + 1}:</span>
-        <span style="color:var(--accent)">${d.from}</span>
-        <span style="color:var(--text-dim)"> → </span>
-        <span style="color:var(--accent3);font-weight:600">${d.to}</span>
-        <span style="color:var(--text-dim)"> · P = ${d.fraction} = </span>
-        <span style="color:var(--warn);font-weight:600">${d.prob_pct}</span>
-      </div>`
-    ).join('');
-
-    setStatus('genStatus', '');
-  } catch(e) {
-    setStatus('genStatus', `Error: ${e.message}`, 'err');
-  }
-}
-
-// ═══════════════════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════════════════
-function setStatus(id, msg, type) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.className = 'status-msg' + (type ? ' ' + type : '');
-}
-
-async function resetAll() {
-  try {
-    await api("/api/corpus", { method: "DELETE" });
-    corpus = [];
-    vocab  = [];
-    renderCorpusUI({ stats: { total_phrases: 0, total_words: 0, vocab_size: 0, vocab: [] } });
-    document.getElementById('phraseInput').value = '';
-    goTo(0);
-  } catch(e) {
-    alert(`Error al reiniciar: ${e.message}`);
-  }
-}
-
-// ═══════════════════════════════════════════════════
-//  INIT — carga el corpus al abrir la página
-// ═══════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
+async function resetCorpus() {
+  if (!confirm('¿Borrar todo el corpus? Esta acción no se puede deshacer.')) return;
+  await fetch(`${API}/api/corpus`, { method:'DELETE' });
+  corpusCache = [];
+  modelCache  = null;
+  graphInitialized = false;
+  document.getElementById('phraseStream').innerHTML = '';
+  document.getElementById('bigramLog').innerHTML = '';
+  document.getElementById('stepsLog').innerHTML = '';
+  document.getElementById('generatedBox').innerHTML = '<span style="color:var(--muted)">El texto aparecerá aquí...</span>';
+  document.getElementById('probBars').innerHTML = '';
+  setPhase(0);
   loadCorpus();
+}
+
+// ════════════════════════════════════════════════════════
+//  HELPER: TOKENIZE
+// ════════════════════════════════════════════════════════
+function tokenize(text) {
+  return text.toLowerCase().replace(/[.,;:!?()""'']/g,'').split(/\s+/).filter(Boolean);
+}
+
+function buildBigrams(phrases) {
+  const pairs = [];
+  phrases.forEach(p => {
+    const words = tokenize(p);
+    for (let i = 0; i < words.length - 1; i++) {
+      pairs.push([words[i], words[i+1]]);
+    }
+  });
+  return pairs;
+}
+
+// ════════════════════════════════════════════════════════
+//  PHASE 1 — D3 TRAIN GRAPH
+// ════════════════════════════════════════════════════════
+function buildTrainGraph() {
+  if (!modelCache) return;
+  graphInitialized = true;
+
+  const svg    = d3.select('#trainSvg');
+  const width  = document.getElementById('trainSvg').clientWidth;
+  const height = document.getElementById('trainSvg').clientHeight;
+  svg.selectAll('*').remove();
+
+  // Build nodes + links from model
+  const nodeMap = {};
+  const linksData = [];
+
+  Object.entries(modelCache).forEach(([from, nexts]) => {
+    if (!nodeMap[from]) nodeMap[from] = { id: from, count: 0 };
+    Object.entries(nexts).forEach(([to, info]) => {
+      nodeMap[from].count += info.count;
+      if (!nodeMap[to]) nodeMap[to] = { id: to, count: 0 };
+      linksData.push({
+        source: from,
+        target: to,
+        count: info.count,
+        prob: info.prob,
+        id: `${from}→${to}`
+      });
+    });
+  });
+
+  trainNodes = Object.values(nodeMap);
+  trainLinks = linksData;
+
+  // Clamp node count (limit big corpora for visibility)
+  const maxNodes = 60;
+  if (trainNodes.length > maxNodes) {
+    const top = [...trainNodes].sort((a,b) => b.count - a.count).slice(0, maxNodes);
+    const topSet = new Set(top.map(n => n.id));
+    trainNodes = top;
+    trainLinks = trainLinks.filter(l => topSet.has(l.source) && topSet.has(l.target));
+  }
+
+  // Defs: arrowhead
+  const defs = svg.append('defs');
+  defs.append('marker')
+    .attr('id','arrow-train')
+    .attr('viewBox','0 -5 10 10')
+    .attr('refX', 22).attr('refY', 0)
+    .attr('markerWidth', 5).attr('markerHeight', 5)
+    .attr('orient','auto')
+    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', '#7c3aed');
+
+  defs.append('marker')
+    .attr('id','arrow-active')
+    .attr('viewBox','0 -5 10 10')
+    .attr('refX', 22).attr('refY', 0)
+    .attr('markerWidth', 5).attr('markerHeight', 5)
+    .attr('orient','auto')
+    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', '#f59e0b');
+
+  defs.append('marker')
+    .attr('id','arrow-green')
+    .attr('viewBox','0 -5 10 10')
+    .attr('refX', 22).attr('refY', 0)
+    .attr('markerWidth', 5).attr('markerHeight', 5)
+    .attr('orient','auto')
+    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', '#10b981');
+
+  const g = svg.append('g');
+
+  // Zoom
+  svg.call(d3.zoom()
+    .scaleExtent([0.3, 3])
+    .on('zoom', e => g.attr('transform', e.transform)));
+
+  // Links
+  const link = g.append('g').selectAll('line')
+    .data(trainLinks).join('line')
+    .attr('class','link')
+    .attr('stroke-width', d => Math.max(1, Math.sqrt(d.count) * 1.5))
+    .attr('marker-end','url(#arrow-train)');
+
+  // Nodes group
+  const node = g.append('g').selectAll('g.node')
+    .data(trainNodes).join('g')
+    .attr('class','node')
+    .call(d3.drag()
+      .on('start', (e,d) => { if (!e.active) trainSimulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end',   (e,d) => { if (!e.active) trainSimulation.alphaTarget(0); d.fx=null; d.fy=null; }));
+
+  node.append('circle')
+    .attr('r', d => Math.max(14, 10 + d.count * 2))
+    .attr('fill', '#0b1120')
+    .attr('stroke', '#7c3aed')
+    .attr('stroke-width', 2);
+
+  node.append('text')
+    .text(d => d.id)
+    .attr('text-anchor','middle')
+    .attr('dy','0.35em')
+    .attr('font-size', d => Math.max(9, 7 + d.count))
+    .attr('fill','#e2e8f0');
+
+  // Force simulation
+  trainSimulation = d3.forceSimulation(trainNodes)
+    .force('link', d3.forceLink(trainLinks).id(d => d.id).distance(80).strength(0.5))
+    .force('charge', d3.forceManyBody().strength(-180))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => Math.max(16,12 + d.count * 2) + 4))
+    .on('tick', () => {
+      link
+        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+  // Store references for animation
+  svg._node   = node;
+  svg._link   = link;
+  svg._g      = g;
+  svg._width  = width;
+  svg._height = height;
+
+  // Attach button action
+  document.getElementById('navBtn1').onclick = async () => {
+    setPhase(1);
+    if (!trainRunning) await animateTraining();
+  };
+
+  setTrainStatus('Grafo listo — presiona <strong>ENTRENAR MODELO</strong> para ver la animación');
+}
+
+// ── TRAINING ANIMATION ──
+async function animateTraining() {
+  if (trainRunning || !modelCache || !graphInitialized) return;
+  trainRunning = true;
+
+  const svg   = d3.select('#trainSvg');
+  const node  = svg._node;
+  const link  = svg._link;
+  const log   = document.getElementById('bigramLog');
+
+  // Reset visibility
+  node.selectAll('circle').classed('visible', false);
+  node.selectAll('text').classed('visible', false);
+  link.classed('visible', false);
+  log.innerHTML = '';
+
+  // Build bigrams per phrase for ordered animation
+  const allBigrams = buildBigrams(corpusCache);
+  const total = allBigrams.length;
+  let done = 0;
+
+  // Track which nodes revealed
+  const revealedNodes = new Set();
+
+  const speed = getSpeed();
+
+  for (let pi = 0; pi < corpusCache.length; pi++) {
+    const phrase = corpusCache[pi];
+    const words  = tokenize(phrase);
+
+    // Show spotlight
+    const spot = document.getElementById('phraseSpotlight');
+    spot.textContent = phrase;
+    spot.classList.add('visible');
+    await delay(speed * 2);
+
+    for (let wi = 0; wi < words.length - 1; wi++) {
+      const from = words[wi];
+      const to   = words[wi + 1];
+
+      // Reveal nodes
+      if (!revealedNodes.has(from)) {
+        revealedNodes.add(from);
+        node.filter(d => d.id === from).selectAll('circle').classed('visible', true);
+        node.filter(d => d.id === from).selectAll('text').classed('visible', true);
+      }
+      if (!revealedNodes.has(to)) {
+        revealedNodes.add(to);
+        node.filter(d => d.id === to).selectAll('circle').classed('visible', true);
+        node.filter(d => d.id => d.id === to).selectAll('text').classed('visible', true);
+        node.filter(d => d.id === to).selectAll('text').classed('visible', true);
+      }
+
+      // Highlight & reveal edge
+      const edge = link.filter(d =>
+        (typeof d.source === 'object' ? d.source.id : d.source) === from &&
+        (typeof d.target === 'object' ? d.target.id : d.target) === to
+      );
+      edge.classed('visible', true).classed('highlighted', true);
+      setTimeout(() => edge.classed('highlighted', false), speed * 3);
+
+      // Log bigram
+      done++;
+      const pct = Math.round((done / total) * 100);
+      document.getElementById('trainBar').style.width = pct + '%';
+
+      const info = modelCache[from]?.[to];
+      const entry = document.createElement('div');
+      entry.className = 'bigram-entry new';
+      entry.innerHTML = `
+        <span class="bigram-from">${from}</span>
+        <span class="bigram-arr"> → </span>
+        <span class="bigram-to">${to}</span>
+        <span class="bigram-cnt">${info ? (info.prob * 100).toFixed(0) + '%' : ''}</span>
+      `;
+      log.prepend(entry);
+      setTimeout(() => entry.classList.remove('new'), 800);
+
+      // Keep log scrolled to top
+      log.scrollTop = 0;
+
+      setTrainStatus(`<strong>Procesando:</strong> "${phrase.substring(0,50)}..." · Bigrama <strong>${done}/${total}</strong>`);
+
+      await delay(speed);
+    }
+
+    spot.classList.remove('visible');
+    await delay(speed);
+  }
+
+  // Reveal remaining
+  node.selectAll('circle').classed('visible', true);
+  node.selectAll('text').classed('visible', true);
+  link.classed('visible', true);
+
+  setTrainStatus(`<strong>✓ Entrenamiento completo</strong> · ${trainNodes.length} palabras · ${trainLinks.length} bigramas aprendidos`);
+  document.getElementById('trainBar').style.width = '100%';
+
+  trainRunning = false;
+}
+
+function setTrainStatus(html) {
+  const el = document.getElementById('trainStatus');
+  el.innerHTML = html + `<div class="train-progress"><div class="train-progress-fill" id="trainBar" style="width:${document.getElementById('trainBar')?.style.width || '0%'}"></div></div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  PHASE 2 — PREDICTION GRAPH
+// ════════════════════════════════════════════════════════
+function buildPredictGraph() {
+  if (!modelCache) return;
+
+  const svg    = d3.select('#predictSvg');
+  const width  = document.getElementById('predictSvg').clientWidth;
+  const height = document.getElementById('predictSvg').clientHeight;
+  svg.selectAll('*').remove();
+
+  // Reuse train nodes/links
+  const nodes = trainNodes.map(n => ({ ...n, x: undefined, y: undefined }));
+  const links = trainLinks.map(l => ({ ...l }));
+
+  const defs = svg.append('defs');
+  ['arrow-train','arrow-active','arrow-green'].forEach((id, i) => {
+    const colors = ['#7c3aed','#f59e0b','#10b981'];
+    defs.append('marker').attr('id', id)
+      .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
+      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', colors[i]);
+  });
+
+  const g = svg.append('g');
+  svg.call(d3.zoom().scaleExtent([0.3,3]).on('zoom', e => g.attr('transform', e.transform)));
+
+  const link = g.append('g').selectAll('line')
+    .data(links).join('line')
+    .attr('class','link visible')
+    .attr('stroke-width', d => Math.max(1, Math.sqrt(d.count) * 1.2))
+    .attr('marker-end','url(#arrow-train)');
+
+  const node = g.append('g').selectAll('g.node')
+    .data(nodes).join('g').attr('class','node')
+    .on('click', (e,d) => {
+      document.getElementById('seedInput').value = d.id;
+    })
+    .call(d3.drag()
+      .on('start', (e,d) => { if (!e.active) predictSimulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end',   (e,d) => { if (!e.active) predictSimulation.alphaTarget(0); d.fx=null; d.fy=null; }));
+
+  node.append('circle')
+    .attr('r', d => Math.max(14, 10 + d.count * 2))
+    .attr('fill','#0b1120')
+    .attr('stroke','#7c3aed').attr('stroke-width',2).classed('visible',true);
+
+  node.append('text')
+    .text(d => d.id)
+    .attr('text-anchor','middle').attr('dy','0.35em')
+    .attr('font-size', d => Math.max(9, 7 + d.count))
+    .attr('fill','#e2e8f0').classed('visible',true);
+
+  predictSimulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(0.5))
+    .force('charge', d3.forceManyBody().strength(-180))
+    .force('center', d3.forceCenter(width/2, height/2))
+    .force('collision', d3.forceCollide().radius(d => Math.max(16,12+d.count*2)+4))
+    .on('tick', () => {
+      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+          .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      node.attr('transform',d=>`translate(${d.x},${d.y})`);
+    });
+
+  svg._node  = node;
+  svg._link  = link;
+  svg._nodes = nodes;
+  svg._links = links;
+  svg._g     = g;
+}
+
+// ── PREDICTION ANIMATION ──
+async function startPrediction() {
+  if (predictRunning) return;
+  if (!modelCache) { await loadModel(); buildPredictGraph(); }
+
+  const seed = document.getElementById('seedInput').value.trim().toLowerCase();
+  if (!seed) return;
+  if (!modelCache[seed]) {
+    document.getElementById('generatedBox').innerHTML =
+      `<span style="color:#ef4444">"${seed}" no está en el vocabulario</span>`;
+    return;
+  }
+
+  predictRunning = true;
+  document.getElementById('predictBtn').disabled = true;
+
+  const svg   = d3.select('#predictSvg');
+  const node  = svg._node;
+  const link  = svg._link;
+  const nodes = svg._nodes;
+  const links = svg._links;
+
+  // Reset
+  node.selectAll('circle').classed('active-node', false).classed('path-node', false)
+    .attr('stroke','#7c3aed').attr('stroke-width',2);
+  link.classed('highlighted',false).classed('path-active',false)
+    .attr('marker-end','url(#arrow-train)');
+  document.getElementById('stepsLog').innerHTML = '';
+  document.getElementById('generatedBox').innerHTML = '';
+  document.getElementById('probBars').innerHTML = '';
+
+  const generated = [seed];
+  let current = seed;
+
+  // Show seed node
+  highlightNode(node, seed, 'active');
+  appendGenWord(seed, true);
+
+  for (let step = 0; step < 9; step++) {
+    const nexts = modelCache[current];
+    if (!nexts || Object.keys(nexts).length === 0) break;
+
+    const total = Object.values(nexts).reduce((s,v)=>s+v.count,0);
+    const sorted = Object.entries(nexts).sort((a,b)=>b[1].prob-a[1].prob);
+
+    // Show probability bars
+    showProbBars(sorted, null);
+    await delay(900);
+
+    // Choose next (weighted random)
+    const chosen = weightedChoose(nexts);
+    const chosenInfo = nexts[chosen];
+
+    // Highlight chosen bar
+    showProbBars(sorted, chosen);
+    await delay(400);
+
+    // Animate ball along edge
+    await animateBall(svg, nodes, current, chosen);
+
+    // Highlight edge and next node
+    highlightEdge(link, current, chosen);
+    highlightNode(node, current, 'path');
+    highlightNode(node, chosen, 'active');
+
+    // Log step
+    const entry = document.createElement('div');
+    entry.className = 'step-entry';
+    entry.innerHTML =
+      `<span class="step-from">${current}</span>` +
+      ` → <span class="step-to">${chosen}</span>` +
+      ` · <span class="step-frac">${chosenInfo.count}/${total}</span>` +
+      ` = <span class="step-prob">${(chosenInfo.prob*100).toFixed(0)}%</span>`;
+    document.getElementById('stepsLog').prepend(entry);
+
+    // Append word to generated text
+    appendGenWord(chosen, false);
+
+    generated.push(chosen);
+    current = chosen;
+    await delay(300);
+  }
+
+  document.getElementById('probBars').innerHTML = '';
+  predictRunning = false;
+  document.getElementById('predictBtn').disabled = false;
+}
+
+// ── Graph helpers ──
+function highlightNode(nodeSel, id, type) {
+  nodeSel.filter(d => d.id === id).selectAll('circle')
+    .classed('active-node', type === 'active')
+    .classed('path-node',   type === 'path')
+    .attr('stroke', type === 'active' ? '#f59e0b' : type === 'path' ? '#10b981' : '#7c3aed')
+    .attr('stroke-width', (type === 'active' || type === 'path') ? 3 : 2);
+}
+
+function highlightEdge(linkSel, from, to) {
+  linkSel.filter(d =>
+    (typeof d.source==='object'?d.source.id:d.source)===from &&
+    (typeof d.target==='object'?d.target.id:d.target)===to
+  ).classed('path-active',true).attr('marker-end','url(#arrow-green)');
+}
+
+function animateBall(svg, nodes, fromId, toId) {
+  return new Promise(resolve => {
+    const fn = nodes.find(n => n.id === fromId);
+    const tn = nodes.find(n => n.id === toId);
+    if (!fn || !tn) { resolve(); return; }
+
+    const svgEl = svg.node();
+    const ball  = svg.select('g').append('circle')
+      .attr('class','travel-ball')
+      .attr('r', 8)
+      .attr('cx', fn.x).attr('cy', fn.y);
+
+    ball.transition().duration(600).ease(d3.easeCubicInOut)
+      .attr('cx', tn.x).attr('cy', tn.y)
+      .on('end', () => { ball.remove(); resolve(); });
+  });
+}
+
+function showProbBars(sorted, chosen) {
+  const container = document.getElementById('probBars');
+  container.innerHTML = '';
+  const top = sorted.slice(0, 6);
+  top.forEach(([word, info], i) => {
+    const isChosen = word === chosen;
+    const row = document.createElement('div');
+    row.className = 'prob-row';
+    row.style.animationDelay = `${i * 0.04}s`;
+    row.innerHTML = `
+      <span class="prob-word" style="${isChosen?'color:var(--green);font-weight:700':''}">${word}</span>
+      <div class="prob-bar-bg">
+        <div class="prob-bar-fg ${isChosen?'selected':''}" style="width:0%"
+             data-target="${(info.prob*100).toFixed(1)}"></div>
+      </div>
+      <span class="prob-pct">${(info.prob*100).toFixed(0)}%</span>
+    `;
+    container.appendChild(row);
+  });
+  setTimeout(() => {
+    container.querySelectorAll('.prob-bar-fg').forEach(b => {
+      b.style.width = b.dataset.target + '%';
+    });
+  }, 30);
+}
+
+function appendGenWord(word, isSeed) {
+  const box = document.getElementById('generatedBox');
+  const span = document.createElement('span');
+  span.className = isSeed ? 'gen-word-seed' : 'gen-word-new';
+  span.style.animationDelay = '0s';
+  span.textContent = (box.children.length > 0 ? ' ' : '') + word;
+  box.appendChild(span);
+}
+
+function weightedChoose(nexts) {
+  const entries = Object.entries(nexts);
+  const total   = entries.reduce((s,[,v])=>s+v.count,0);
+  let r = Math.random() * total;
+  for (const [w, v] of entries) {
+    r -= v.count;
+    if (r <= 0) return w;
+  }
+  return entries[entries.length-1][0];
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ════════════════════════════════════════════════════════
+//  Override navBtn1 after graph build
+// ════════════════════════════════════════════════════════
+document.getElementById('navBtn1').addEventListener('click', async () => {
+  setPhase(1);
+  if (!modelCache) await loadModel();
+  if (!graphInitialized) buildTrainGraph();
+  if (!trainRunning) animateTraining();
 });
+
+document.getElementById('navBtn2').addEventListener('click', async () => {
+  setPhase(2);
+  if (!modelCache) await loadModel();
+  if (!graphInitialized) { buildTrainGraph(); }
+  buildPredictGraph();
+});
+
+document.getElementById('seedInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startPrediction();
+});
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+(async () => {
+  initQR();
+  await loadCorpus();
+  setInterval(async () => {
+    if (currentPhase === 0) await loadCorpus();
+  }, 2500);
+})();
 </script>
 </body>
 </html>
