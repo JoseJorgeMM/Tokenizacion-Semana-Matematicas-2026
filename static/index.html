@@ -1,1474 +1,1989 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>¿Cómo piensa la IA? · Pantalla Principal</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
-:root {
-  --bg: #050810;
-  --surface: #0b1120;
-  --surface2: #101928;
-  --border: #1a2840;
-  --accent: #00d4ff;
-  --purple: #7c3aed;
-  --green: #10b981;
-  --warn: #f59e0b;
-  --red: #ef4444;
-  --text: #e2e8f0;
-  --muted: #64748b;
-  --dim: #1e3a5f;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-disp: 'Syne', sans-serif;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¿Cómo piensa la IA? · Pantalla Principal</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #050810;
+      --surface: #0b1120;
+      --surface2: #101928;
+      --border: #1a2840;
+      --accent: #00d4ff;
+      --purple: #7c3aed;
+      --green: #10b981;
+      --warn: #f59e0b;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --dim: #1e3a5f;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-disp: 'Syne', sans-serif;
+    }
 
-html, body {
-  width:100%; height:100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-mono);
-  overflow: hidden;
-}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-/* Grid overlay */
-body::before {
-  content:'';
-  position:fixed; inset:0;
-  background-image:
-    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
-  background-size: 50px 50px;
-  pointer-events:none; z-index:0;
-}
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      overflow: hidden;
+    }
 
-/* ── LAYOUT ── */
-.app {
-  position:relative; z-index:1;
-  width:100%; height:100vh;
-  display:grid;
-  grid-template-rows: 64px 1fr 58px;
-}
+    /* Grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 212, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.025) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-/* ── HEADER ── */
-header {
-  display:flex;
-  align-items:center;
-  padding: 0 1.5rem;
-  gap: 1rem;
-  border-bottom: 1px solid var(--border);
-  background: rgba(5,8,16,0.9);
-  backdrop-filter: blur(10px);
-}
+    /* ── LAYOUT ── */
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 64px 1fr 58px;
+    }
 
-.header-title {
-  font-family: var(--font-disp);
-  font-size: 1.1rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.01em;
-  flex: 1;
-}
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5, 8, 16, 0.9);
+      backdrop-filter: blur(10px);
+    }
 
-.phase-pills {
-  display:flex;
-  gap: 0.4rem;
-}
+    .header-title {
+      font-family: var(--font-disp);
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
 
-.phase-pill {
-  padding: 0.25rem 0.8rem;
-  border-radius: 100px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  transition: all 0.25s;
-}
-.phase-pill.active {
-  background: rgba(0,212,255,0.12);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.phase-pill.done {
-  background: rgba(16,185,129,0.1);
-  border-color: var(--green);
-  color: var(--green);
-}
+    .phase-pills {
+      display: flex;
+      gap: 0.4rem;
+    }
 
-.live-counter {
-  display:flex;
-  align-items:center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-  padding: 0.3rem 0.8rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-}
+    .phase-pill {
+      padding: 0.25rem 0.8rem;
+      border-radius: 100px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all 0.25s;
+    }
 
-.live-counter .num {
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-}
-.live-counter.bump .num { animation: numBump 0.4s ease; }
-@keyframes numBump {
-  0%   { transform:scale(1); }
-  40%  { transform:scale(1.5); color:#fff; }
-  100% { transform:scale(1); }
-}
+    .phase-pill.active {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
-.live-dot {
-  width:7px; height:7px;
-  background: var(--green);
-  border-radius:50%;
-  animation: livePulse 1.4s ease-in-out infinite;
-}
-@keyframes livePulse {
-  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(16,185,129,0.4); }
-  50%      { opacity:0.6; box-shadow:0 0 0 6px rgba(16,185,129,0); }
-}
+    .phase-pill.done {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--green);
+      color: var(--green);
+    }
 
-/* QR mini in header */
-#qrMini { width:40px; height:40px; flex-shrink:0; cursor:pointer; }
-#qrMini img, #qrMini canvas { width:40px !important; height:40px !important; border-radius:4px; }
+    .live-counter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 0.3rem 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+    }
 
-/* ── MAIN ── */
-main {
-  position:relative;
-  overflow:hidden;
-}
+    .live-counter .num {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
 
-.phase {
-  position:absolute; inset:0;
-  opacity:0;
-  pointer-events:none;
-  transition: opacity 0.4s ease;
-}
-.phase.active {
-  opacity:1;
-  pointer-events:all;
-}
+    .live-counter.bump .num {
+      animation: numBump 0.4s ease;
+    }
 
-/* ─── PHASE 0: CORPUS ─── */
-#phase0 {
-  display:grid;
-  grid-template-columns: 360px 1fr;
-}
+    @keyframes numBump {
+      0% {
+        transform: scale(1);
+      }
 
-.qr-panel {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding: 2rem;
-  border-right: 1px solid var(--border);
-  gap: 1.2rem;
-}
+      40% {
+        transform: scale(1.5);
+        color: #fff;
+      }
 
-.qr-label {
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
+      100% {
+        transform: scale(1);
+      }
+    }
 
-#qrLarge {
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-}
-#qrLarge canvas, #qrLarge img { display:block; }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: livePulse 1.4s ease-in-out infinite;
+    }
 
-.join-url {
-  font-size: 0.78rem;
-  color: var(--muted);
-  text-align:center;
-  word-break: break-all;
-  max-width: 280px;
-}
-.join-url strong { color: var(--accent); }
+    @keyframes livePulse {
 
-.qr-instruction {
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-align:center;
-  line-height: 1.6;
-  max-width: 240px;
-}
+      0%,
+      100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
 
-.stream-panel {
-  display:flex;
-  flex-direction:column;
-  padding: 1.5rem;
-  gap: 1rem;
-  overflow:hidden;
-}
+      50% {
+        opacity: 0.6;
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+      }
+    }
 
-.stream-header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
+    /* QR mini in header */
+    #qrMini {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
 
-.stream-title {
-  font-family: var(--font-disp);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
-}
+    #qrMini img,
+    #qrMini canvas {
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 4px;
+    }
 
-.phrase-stream {
-  flex:1;
-  overflow-y:auto;
-  display:flex;
-  flex-direction:column-reverse;
-  gap: 0.5rem;
-  padding-right: 0.3rem;
-}
+    /* ── MAIN ── */
+    main {
+      position: relative;
+      overflow: hidden;
+    }
 
-.phrase-stream::-webkit-scrollbar { width:3px; }
-.phrase-stream::-webkit-scrollbar-thumb { background:var(--border); }
+    .phase {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
 
-.stream-phrase {
-  padding: 0.6rem 0.9rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 6px 6px 0;
-  font-size: 0.8rem;
-  color: var(--text);
-  animation: slideInPhrase 0.4s cubic-bezier(0.16,1,0.3,1) both;
-  line-height: 1.5;
-}
+    .phase.active {
+      opacity: 1;
+      pointer-events: all;
+    }
 
-@keyframes slideInPhrase {
-  from { opacity:0; transform: translateX(-20px); }
-  to   { opacity:1; transform: translateX(0); }
-}
+    /* ─── PHASE 0: CORPUS ─── */
+    #phase0 {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+    }
 
-.corpus-stats-row {
-  display:grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 0.6rem;
-}
+    .qr-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      border-right: 1px solid var(--border);
+      gap: 1.2rem;
+    }
 
-.corpus-stat {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.8rem;
-  text-align:center;
-}
-.corpus-stat .big {
-  font-family: var(--font-disp);
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--accent);
-  display:block;
-  line-height:1;
-}
-.corpus-stat .lbl {
-  font-size: 0.6rem;
-  color: var(--muted);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 0.3rem;
-}
+    .qr-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
 
-/* ─── PHASE 1: TRAINING ─── */
-#phase1 {
-  display:grid;
-  grid-template-columns: 1fr 280px;
-}
+    #qrLarge {
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+    }
 
-.graph-container {
-  position:relative;
-  overflow:hidden;
-}
+    #qrLarge canvas,
+    #qrLarge img {
+      display: block;
+    }
 
-#trainSvg {
-  width:100%; height:100%;
-}
+    .join-url {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      word-break: break-all;
+      max-width: 280px;
+    }
 
-/* Training overlay */
-.train-overlay {
-  position:absolute;
-  bottom:1rem; left:1rem; right:1rem;
-  display:flex;
-  align-items:center;
-  gap: 1rem;
-}
+    .join-url strong {
+      color: var(--accent);
+    }
 
-.train-status {
-  flex:1;
-  background: rgba(5,8,16,0.85);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.7rem 1rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-  backdrop-filter:blur(8px);
-}
-.train-status strong { color: var(--accent); }
+    .qr-instruction {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      max-width: 240px;
+    }
 
-.train-progress {
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow:hidden;
-  margin-top: 0.5rem;
-}
-.train-progress-fill {
-  height:100%;
-  background: linear-gradient(90deg, var(--accent), var(--purple));
-  border-radius:2px;
-  transition: width 0.3s ease;
-  width: 0%;
-}
+    .stream-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      gap: 1rem;
+      overflow: hidden;
+    }
 
-/* Train side panel */
-.train-side {
-  border-left: 1px solid var(--border);
-  padding: 1.2rem;
-  display:flex;
-  flex-direction:column;
-  gap: 0.8rem;
-  overflow-y:auto;
-}
+    .stream-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-.side-title {
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
+    .stream-title {
+      font-family: var(--font-disp);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
 
-.bigram-log {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  gap: 0.35rem;
-  overflow-y: auto;
-  max-height: 300px;
-}
-.bigram-log::-webkit-scrollbar { width:2px; }
-.bigram-log::-webkit-scrollbar-thumb { background:var(--border); }
+    .phrase-stream {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 0.5rem;
+      padding-right: 0.3rem;
+    }
 
-.bigram-entry {
-  display:flex;
-  align-items:center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  padding: 0.3rem 0.5rem;
-  background: var(--surface);
-  border-radius: 4px;
-  animation: fadeSlide 0.3s ease both;
-  border: 1px solid transparent;
-}
-.bigram-entry.new { border-color: rgba(0,212,255,0.3); }
+    .phrase-stream::-webkit-scrollbar {
+      width: 3px;
+    }
 
-@keyframes fadeSlide {
-  from { opacity:0; transform:translateX(8px); }
-  to   { opacity:1; transform:translateX(0); }
-}
+    .phrase-stream::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
 
-.bigram-from { color: var(--accent); font-weight:600; }
-.bigram-arr  { color: var(--muted); }
-.bigram-to   { color: var(--purple); font-weight:600; }
-.bigram-cnt  { margin-left:auto; color: var(--warn); font-size:0.65rem; }
+    .stream-phrase {
+      padding: 0.6rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      font-size: 0.8rem;
+      color: var(--text);
+      animation: slideInPhrase 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+      line-height: 1.5;
+    }
 
-.math-box {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.9rem;
-  font-size: 0.7rem;
-  color: var(--muted);
-  line-height: 1.7;
-}
-.math-box .eq {
-  font-size: 0.72rem;
-  color: var(--warn);
-  margin-top: 0.4rem;
-  display:block;
-}
-.math-box strong { color: var(--accent); }
+    @keyframes slideInPhrase {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
 
-/* ─── PHASE 2: PREDICTION ─── */
-#phase2 {
-  display:grid;
-  grid-template-columns: 1fr 320px;
-}
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
 
-#predictSvg {
-  width:100%; height:100%;
-}
+    .corpus-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
 
-.predict-panel {
-  border-left: 1px solid var(--border);
-  padding: 1.2rem;
-  display:flex;
-  flex-direction:column;
-  gap: 0.8rem;
-  overflow-y:auto;
-}
+    .corpus-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.8rem;
+      text-align: center;
+    }
 
-.predict-panel::-webkit-scrollbar { width:2px; }
+    .corpus-stat .big {
+      font-family: var(--font-disp);
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+    }
 
-.seed-row {
-  display:flex;
-  gap: 0.5rem;
-}
+    .corpus-stat .lbl {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 0.3rem;
+    }
 
-.seed-input {
-  flex:1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  padding: 0.6rem 0.8rem;
-  outline:none;
-  transition: border-color 0.2s;
-}
-.seed-input:focus { border-color: var(--accent); }
+    /* ─── PHASE 1: TRAINING ─── */
+    #phase1 {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+    }
 
-.predict-btn {
-  padding: 0.6rem 1rem;
-  background: var(--purple);
-  border:none;
-  border-radius: 4px;
-  color: white;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor:pointer;
-  transition: all 0.2s;
-  white-space:nowrap;
-}
-.predict-btn:hover { filter:brightness(1.2); }
-.predict-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .graph-container {
+      position: relative;
+      overflow: hidden;
+    }
 
-.steps-log {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  gap: 0.3rem;
-  overflow-y:auto;
-  max-height:220px;
-  padding-right:2px;
-}
-.steps-log::-webkit-scrollbar { width:2px; }
+    #trainSvg {
+      width: 100%;
+      height: 100%;
+    }
 
-.step-entry {
-  padding: 0.4rem 0.6rem;
-  background: var(--surface);
-  border-radius: 4px;
-  font-size: 0.72rem;
-  animation: fadeSlide 0.3s ease both;
-  line-height:1.5;
-}
+    /* Training overlay */
+    .train-overlay {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
 
-.step-from  { color: var(--accent); font-weight:600; }
-.step-to    { color: var(--green);  font-weight:700; }
-.step-prob  { color: var(--warn);   font-weight:600; }
-.step-frac  { color: var(--muted);  font-size:0.65rem; }
+    .train-status {
+      flex: 1;
+      background: rgba(5, 8, 16, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.7rem 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      backdrop-filter: blur(8px);
+    }
 
-.generated-box {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.9rem;
-  font-size: 0.85rem;
-  line-height: 1.8;
-  min-height: 60px;
-}
+    .train-status strong {
+      color: var(--accent);
+    }
 
-.gen-word-seed  { color: var(--muted); }
-.gen-word-new {
-  color: var(--accent);
-  font-weight: 700;
-  animation: wordPop 0.4s ease both;
-}
-@keyframes wordPop {
-  from { opacity:0; transform:translateY(4px); }
-  to   { opacity:1; transform:translateY(0); }
-}
+    .train-progress {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
 
-.prob-bars {
-  display:flex;
-  flex-direction:column;
-  gap: 0.3rem;
-}
-.prob-row {
-  display:flex;
-  align-items:center;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-  animation: fadeSlide 0.25s ease both;
-}
-.prob-word {
-  width: 80px;
-  flex-shrink:0;
-  color: var(--text);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.prob-bar-bg {
-  flex:1;
-  height: 6px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow:hidden;
-}
-.prob-bar-fg {
-  height:100%;
-  background: linear-gradient(90deg, var(--accent), var(--purple));
-  border-radius:3px;
-  transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
-}
-.prob-bar-fg.selected {
-  background: linear-gradient(90deg, var(--green), #059669);
-}
-.prob-pct {
-  width: 36px;
-  text-align:right;
-  color: var(--warn);
-  font-weight:600;
-  font-size: 0.65rem;
-}
+    .train-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
 
-/* ── FOOTER NAV ── */
-footer {
-  display:flex;
-  align-items:center;
-  gap: 0.5rem;
-  padding: 0 1.5rem;
-  border-top: 1px solid var(--border);
-  background: rgba(5,8,16,0.95);
-}
+    /* Train side panel */
+    .train-side {
+      border-left: 1px solid var(--border);
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      overflow-y: auto;
+    }
 
-.nav-btn {
-  padding: 0.5rem 1.2rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.04em;
-}
-.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-.nav-btn.active {
-  background: rgba(0,212,255,0.1);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.nav-btn.danger {
-  border-color: rgba(239,68,68,0.4);
-  color: #ef4444;
-}
-.nav-btn.danger:hover {
-  background: rgba(239,68,68,0.1);
-  border-color: #ef4444;
-}
+    .side-title {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
 
-.speed-control {
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap: 0.5rem;
-  font-size: 0.65rem;
-  color: var(--muted);
-}
-.speed-slider {
-  width: 80px;
-  accent-color: var(--accent);
-}
+    .bigram-log {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      overflow-y: auto;
+      max-height: 300px;
+    }
 
-/* ── D3 GRAPH STYLES ── */
-.node circle {
-  cursor: pointer;
-  transition: r 0.2s;
-}
-.node text {
-  pointer-events:none;
-  user-select:none;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  paint-order: stroke;
-  stroke: var(--bg);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
+    .bigram-log::-webkit-scrollbar {
+      width: 2px;
+    }
 
-.link {
-  fill:none;
-  stroke: var(--purple);
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-.link.visible { opacity: 0.6; }
-.link.highlighted { opacity: 1; stroke: var(--warn); stroke-width: 4px; }
-.link.path-active  { opacity: 1; stroke: var(--green); stroke-width: 5px; }
+    .bigram-log::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
 
-.node circle { opacity:0; transition: opacity 0.4s, r 0.2s; }
-.node circle.visible { opacity:1; }
-.node circle.active-node { filter: drop-shadow(0 0 12px var(--warn)); }
-.node circle.path-node  { filter: drop-shadow(0 0 14px var(--green)); }
+    .bigram-entry {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      padding: 0.3rem 0.5rem;
+      background: var(--surface);
+      border-radius: 4px;
+      animation: fadeSlide 0.3s ease both;
+      border: 1px solid transparent;
+    }
 
-.node text { opacity:0; transition: opacity 0.4s; }
-.node text.visible { opacity:1; }
+    .bigram-entry.new {
+      border-color: rgba(0, 212, 255, 0.3);
+    }
 
-/* Traveling ball */
-.travel-ball {
-  fill: var(--warn);
-  filter: drop-shadow(0 0 8px var(--warn));
-}
+    @keyframes fadeSlide {
+      from {
+        opacity: 0;
+        transform: translateX(8px);
+      }
 
-/* ── PHRASE SPOTLIGHT ── */
-.phrase-spotlight {
-  position:absolute;
-  top: 1rem; left:50%;
-  transform: translateX(-50%);
-  background: rgba(5,8,16,0.9);
-  border: 1px solid rgba(0,212,255,0.3);
-  border-radius: 6px;
-  padding: 0.5rem 1.2rem;
-  font-size: 0.8rem;
-  color: var(--text);
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s;
-  backdrop-filter: blur(8px);
-  max-width: 90%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  pointer-events:none;
-}
-.phrase-spotlight.visible { opacity:1; }
-</style>
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .bigram-from {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .bigram-arr {
+      color: var(--muted);
+    }
+
+    .bigram-to {
+      color: var(--purple);
+      font-weight: 600;
+    }
+
+    .bigram-cnt {
+      margin-left: auto;
+      color: var(--warn);
+      font-size: 0.65rem;
+    }
+
+    .math-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .math-box .eq {
+      font-size: 0.72rem;
+      color: var(--warn);
+      margin-top: 0.4rem;
+      display: block;
+    }
+
+    .math-box strong {
+      color: var(--accent);
+    }
+
+    /* ─── PHASE 2: PREDICTION ─── */
+    #phase2 {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+    }
+
+    #predictSvg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .predict-panel {
+      border-left: 1px solid var(--border);
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      overflow-y: auto;
+    }
+
+    .predict-panel::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .seed-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .seed-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .seed-input:focus {
+      border-color: var(--accent);
+    }
+
+    .predict-btn {
+      padding: 0.6rem 1rem;
+      background: var(--purple);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .predict-btn:hover {
+      filter: brightness(1.2);
+    }
+
+    .predict-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .steps-log {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      overflow-y: auto;
+      max-height: 220px;
+      padding-right: 2px;
+    }
+
+    .steps-log::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .step-entry {
+      padding: 0.4rem 0.6rem;
+      background: var(--surface);
+      border-radius: 4px;
+      font-size: 0.72rem;
+      animation: fadeSlide 0.3s ease both;
+      line-height: 1.5;
+    }
+
+    .step-from {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .step-to {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .step-prob {
+      color: var(--warn);
+      font-weight: 600;
+    }
+
+    .step-frac {
+      color: var(--muted);
+      font-size: 0.65rem;
+    }
+
+    .generated-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      min-height: 60px;
+    }
+
+    .gen-word-seed {
+      color: var(--muted);
+    }
+
+    .gen-word-new {
+      color: var(--accent);
+      font-weight: 700;
+      animation: wordPop 0.4s ease both;
+    }
+
+    @keyframes wordPop {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .prob-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .prob-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      animation: fadeSlide 0.25s ease both;
+    }
+
+    .prob-word {
+      width: 80px;
+      flex-shrink: 0;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .prob-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .prob-bar-fg {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 3px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .prob-bar-fg.selected {
+      background: linear-gradient(90deg, var(--green), #059669);
+    }
+
+    .prob-pct {
+      width: 36px;
+      text-align: right;
+      color: var(--warn);
+      font-weight: 600;
+      font-size: 0.65rem;
+    }
+
+    /* ─── PHASE 3: LLM (ATENCION) ─── */
+    #phase3 {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+    }
+
+    .llm-panel {
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .llm-header {
+      font-family: var(--font-disp);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .llm-text-area {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      font-size: 1.4rem;
+      line-height: 2.2;
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 0.6rem;
+      min-height: 200px;
+    }
+
+    .llm-word {
+      position: relative;
+      padding: 0.2rem 0.6rem;
+      background: rgba(124, 58, 237, 0.1);
+      border-radius: 6px;
+      color: var(--text);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: wordPop 0.4s ease both;
+    }
+
+    .llm-word.attending {
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+      transform: scale(1.1);
+      z-index: 10;
+    }
+
+    .llm-controls {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .llm-explanation {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .context-log {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      overflow-y: auto;
+      max-height: 350px;
+      padding-right: 4px;
+    }
+
+    .context-log::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .context-entry {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.8rem;
+      font-size: 0.72rem;
+      animation: fadeSlide 0.3s ease both;
+      line-height: 1.5;
+    }
+
+    .context-words {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .context-new {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ── FOOTER NAV ── */
+    footer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+      border-top: 1px solid var(--border);
+      background: rgba(5, 8, 16, 0.95);
+    }
+
+    .nav-btn {
+      padding: 0.5rem 1.2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .nav-btn.active {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .nav-btn.danger {
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+    }
+
+    .nav-btn.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+
+    .speed-control {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .speed-slider {
+      width: 80px;
+      accent-color: var(--accent);
+    }
+
+    /* ── D3 GRAPH STYLES ── */
+    .node circle {
+      cursor: pointer;
+      transition: r 0.2s;
+    }
+
+    .node text {
+      pointer-events: none;
+      user-select: none;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      paint-order: stroke;
+      stroke: var(--bg);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .link {
+      fill: none;
+      stroke: var(--purple);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .link.visible {
+      opacity: 0.6;
+    }
+
+    .link.highlighted {
+      opacity: 1;
+      stroke: var(--warn);
+      stroke-width: 4px;
+    }
+
+    .link.path-active {
+      opacity: 1;
+      stroke: var(--green);
+      stroke-width: 5px;
+    }
+
+    .node circle {
+      opacity: 0;
+      transition: opacity 0.4s, r 0.2s;
+    }
+
+    .node circle.visible {
+      opacity: 1;
+    }
+
+    .node circle.active-node {
+      filter: drop-shadow(0 0 12px var(--warn));
+    }
+
+    .node circle.path-node {
+      filter: drop-shadow(0 0 14px var(--green));
+    }
+
+    .node text {
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .node text.visible {
+      opacity: 1;
+    }
+
+    /* Traveling ball */
+    .travel-ball {
+      fill: var(--warn);
+      filter: drop-shadow(0 0 8px var(--warn));
+    }
+
+    /* ── PHRASE SPOTLIGHT ── */
+    .phrase-spotlight {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(5, 8, 16, 0.9);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 6px;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.8rem;
+      color: var(--text);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s;
+      backdrop-filter: blur(8px);
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    .phrase-spotlight.visible {
+      opacity: 1;
+    }
+  </style>
 </head>
+
 <body>
-<div class="app">
+  <div class="app">
 
-  <!-- ── HEADER ── -->
-  <header>
-    <div class="header-title">¿Cómo piensa la IA?</div>
+    <!-- ── HEADER ── -->
+    <header>
+      <div class="header-title">¿Cómo piensa la IA?</div>
 
-    <div class="phase-pills">
-      <span class="phase-pill active" id="pill0">01 · Corpus</span>
-      <span class="phase-pill" id="pill1">02 · Entrenar</span>
-      <span class="phase-pill" id="pill2">03 · Predecir</span>
-    </div>
-
-    <div class="live-counter" id="liveCounter">
-      <div class="live-dot"></div>
-      <span class="num" id="counterNum">0</span>&nbsp;frases
-    </div>
-
-    <div id="qrMini" title="Click para agrandar QR"></div>
-  </header>
-
-  <!-- ── MAIN ── -->
-  <main>
-
-    <!-- PHASE 0: CORPUS -->
-    <div class="phase active" id="phase0">
-      <div class="qr-panel">
-        <div class="qr-label">Escanea para participar</div>
-        <div id="qrLarge"></div>
-        <div class="join-url" id="joinUrlDisplay"></div>
-        <div class="qr-instruction">
-          Abre la cámara de tu celular,<br>
-          escanea el código y escribe<br>
-          una frase sobre matemáticas
-        </div>
+      <div class="phase-pills">
+        <span class="phase-pill active" id="pill0">01 · Corpus</span>
+        <span class="phase-pill" id="pill1">02 · Entrenar</span>
+        <span class="phase-pill" id="pill2">03 · Predecir</span>
+        <span class="phase-pill" id="pill3">04 · LLM</span>
       </div>
 
-      <div class="stream-panel">
-        <div class="stream-header">
-          <span class="stream-title">Corpus construyéndose en vivo</span>
-        </div>
-        <div class="corpus-stats-row">
-          <div class="corpus-stat">
-            <span class="big" id="st0">0</span>
-            <span class="lbl">Frases</span>
+      <div class="live-counter" id="liveCounter">
+        <div class="live-dot"></div>
+        <span class="num" id="counterNum">0</span>&nbsp;frases
+      </div>
+
+      <div id="qrMini" title="Click para agrandar QR"></div>
+    </header>
+
+    <!-- ── MAIN ── -->
+    <main>
+
+      <!-- PHASE 0: CORPUS -->
+      <div class="phase active" id="phase0">
+        <div class="qr-panel">
+          <div class="qr-label">Escanea para participar</div>
+          <div id="qrLarge"></div>
+          <div class="join-url" id="joinUrlDisplay"></div>
+          <div class="qr-instruction">
+            Abre la cámara de tu celular,<br>
+            escanea el código y escribe<br>
+            una frase sobre matemáticas
           </div>
-          <div class="corpus-stat">
-            <span class="big" id="st1">0</span>
-            <span class="lbl">Palabras</span>
+          <button class="nav-btn" style="margin-top: 1rem" onclick="loadDefaultPhrases()" id="defaultPhrasesBtn">Usar
+            frases predeterminadas</button>
+        </div>
+
+        <div class="stream-panel">
+          <div class="stream-header">
+            <span class="stream-title">Corpus construyéndose en vivo</span>
           </div>
-          <div class="corpus-stat">
-            <span class="big" id="st2">0</span>
-            <span class="lbl">Vocabulario</span>
+          <div class="corpus-stats-row">
+            <div class="corpus-stat">
+              <span class="big" id="st0">0</span>
+              <span class="lbl">Frases</span>
+            </div>
+            <div class="corpus-stat">
+              <span class="big" id="st1">0</span>
+              <span class="lbl">Palabras</span>
+            </div>
+            <div class="corpus-stat">
+              <span class="big" id="st2">0</span>
+              <span class="lbl">Vocabulario</span>
+            </div>
+          </div>
+          <div class="phrase-stream" id="phraseStream"></div>
+        </div>
+      </div>
+
+      <!-- PHASE 1: TRAINING -->
+      <div class="phase" id="phase1">
+        <div class="graph-container">
+          <svg id="trainSvg"></svg>
+          <div class="phrase-spotlight" id="phraseSpotlight"></div>
+          <div class="train-overlay">
+            <div class="train-status" id="trainStatus">
+              <strong>Listo para entrenar</strong> — presiona el botón cuando quieras
+              <div class="train-progress">
+                <div class="train-progress-fill" id="trainBar"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="phrase-stream" id="phraseStream"></div>
-      </div>
-    </div>
-
-    <!-- PHASE 1: TRAINING -->
-    <div class="phase" id="phase1">
-      <div class="graph-container">
-        <svg id="trainSvg"></svg>
-        <div class="phrase-spotlight" id="phraseSpotlight"></div>
-        <div class="train-overlay">
-          <div class="train-status" id="trainStatus">
-            <strong>Listo para entrenar</strong> — presiona el botón cuando quieras
-            <div class="train-progress"><div class="train-progress-fill" id="trainBar"></div></div>
+        <div class="train-side">
+          <div class="side-title">Bigramas aprendidos</div>
+          <div class="bigram-log" id="bigramLog"></div>
+          <div class="math-box">
+            <strong>Probabilidad condicional</strong>
+            <span class="eq">P(B | A) = count(A→B) / count(A)</span>
+            Cada flecha = par de palabras consecutivas aprendido del corpus
           </div>
         </div>
       </div>
-      <div class="train-side">
-        <div class="side-title">Bigramas aprendidos</div>
-        <div class="bigram-log" id="bigramLog"></div>
-        <div class="math-box">
-          <strong>Probabilidad condicional</strong>
-          <span class="eq">P(B | A) = count(A→B) / count(A)</span>
-          Cada flecha = par de palabras consecutivas aprendido del corpus
+
+      <!-- PHASE 2: PREDICTION -->
+      <div class="phase" id="phase2">
+        <div class="graph-container">
+          <svg id="predictSvg"></svg>
+        </div>
+        <div class="predict-panel">
+          <div class="side-title">Generación de texto</div>
+
+          <div class="seed-row">
+            <input class="seed-input" id="seedInput" placeholder="Palabra semilla..." />
+            <button class="predict-btn" id="predictBtn" onclick="startPrediction()">▶ PREDECIR</button>
+          </div>
+
+          <div class="side-title" style="margin-top:0.2rem">Opciones en este paso</div>
+          <div class="prob-bars" id="probBars"></div>
+
+          <div class="side-title" style="margin-top:0.2rem">Decisiones del modelo</div>
+          <div class="steps-log" id="stepsLog"></div>
+
+          <div class="side-title" style="margin-top:0.2rem">Texto generado</div>
+          <div class="generated-box" id="generatedBox">
+            <span style="color:var(--muted)">El texto aparecerá aquí...</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- PHASE 2: PREDICTION -->
-    <div class="phase" id="phase2">
-      <div class="graph-container">
-        <svg id="predictSvg"></svg>
-      </div>
-      <div class="predict-panel">
-        <div class="side-title">Generación de texto</div>
-
-        <div class="seed-row">
-          <input class="seed-input" id="seedInput" placeholder="Palabra semilla..." />
-          <button class="predict-btn" id="predictBtn" onclick="startPrediction()">▶ PREDECIR</button>
+      <!-- PHASE 3: LLM -->
+      <div class="phase" id="phase3">
+        <div class="llm-panel">
+          <div class="llm-header">Generación con Contexto Profundo (Estilo LLM)</div>
+          <div class="llm-explanation">
+            A diferencia de los bigramas que solo tienen "1 memoria", este modelo dinámico usa <strong>todo el contexto
+              posible</strong> hacia atrás para calcular probabilidades. Esto simula el mecanismo de <em>Atención</em>
+            donde la IA lee las palabras anteriores para darle mucha más coherencia lógica a la siguiente decisión o
+            palabra.
+          </div>
+          <div class="llm-text-area" id="llmTextArea"></div>
+          <div class="llm-controls">
+            <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:300px" />
+            <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
+          </div>
         </div>
-
-        <div class="side-title" style="margin-top:0.2rem">Opciones en este paso</div>
-        <div class="prob-bars" id="probBars"></div>
-
-        <div class="side-title" style="margin-top:0.2rem">Decisiones del modelo</div>
-        <div class="steps-log" id="stepsLog"></div>
-
-        <div class="side-title" style="margin-top:0.2rem">Texto generado</div>
-        <div class="generated-box" id="generatedBox">
-          <span style="color:var(--muted)">El texto aparecerá aquí...</span>
+        <div class="predict-panel">
+          <div class="side-title">Análisis de Atención Artificial</div>
+          <div class="context-log" id="llmContextLog"></div>
+          <div class="math-box">
+            <strong>Matemática Contextual</strong>
+            <span class="eq">P(w<sub>t</sub> | w<sub>t-1</sub>, w<sub>t-2</sub>, ...)</span>
+            El sistema rastreó tu corpus buscando las palabras que recientemente se iluminaron como bloque de contexto
+            completo para deducir estadísticamente qué debería seguir exactamente.
+          </div>
         </div>
       </div>
-    </div>
 
-  </main>
+    </main>
 
-  <!-- ── FOOTER NAV ── -->
-  <footer>
-    <button class="nav-btn active" id="navBtn0" onclick="setPhase(0)">📡 CORPUS EN VIVO</button>
-    <button class="nav-btn" id="navBtn1" onclick="goToTrain()">🧪 ENTRENAR MODELO</button>
-    <button class="nav-btn" id="navBtn2" onclick="setPhase(2)">🔮 PREDECIR</button>
-    <button class="nav-btn danger" onclick="resetCorpus()">↺ RESET</button>
+    <!-- ── FOOTER NAV ── -->
+    <footer>
+      <button class="nav-btn active" id="navBtn0" onclick="setPhase(0)">📡 CORPUS EN VIVO</button>
+      <button class="nav-btn" id="navBtn1" onclick="goToTrain()">🧪 ENTRENAR MODELO</button>
+      <button class="nav-btn" id="navBtn2" onclick="setPhase(2)">🔮 PREDECIR (Básico)</button>
+      <button class="nav-btn" id="navBtn3" onclick="setPhase(3)">🧠 MODELO LLM</button>
+      <button class="nav-btn danger" onclick="resetCorpus()">↺ RESET</button>
 
-    <div class="speed-control">
-      Velocidad animación:
-      <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="3">
-    </div>
-  </footer>
+      <div class="speed-control">
+        Velocidad animación:
+        <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="3">
+      </div>
+    </footer>
 
-</div>
+  </div>
 
-<script>
-// ════════════════════════════════════════════════════════
-//  CONFIG
-// ════════════════════════════════════════════════════════
-const API = "";
-const JOIN_URL = window.location.origin + "/join";
+  <script>
+    // ════════════════════════════════════════════════════════
+    //  CONFIG
+    // ════════════════════════════════════════════════════════
+    const API = "";
+    const JOIN_URL = window.location.origin + "/join";
 
-// Animation speed (ms per bigram) based on slider
-function getSpeed() {
-  const v = parseInt(document.getElementById('speedSlider').value);
-  return [600, 400, 250, 120, 50][v - 1];
-}
-
-// ════════════════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════════════════
-let currentPhase  = 0;
-let corpusCache   = [];
-let modelCache    = null;  // { word: { nextWord: { count, prob } } }
-let trainRunning  = false;
-let predictRunning = false;
-let trainSimulation = null;
-let predictSimulation = null;
-let trainNodes = [], trainLinks = [];
-let graphInitialized = false;
-
-// ════════════════════════════════════════════════════════
-//  QR CODE GENERATION
-// ════════════════════════════════════════════════════════
-function initQR() {
-  // Large QR for phase 0
-  new QRCode(document.getElementById("qrLarge"), {
-    text: JOIN_URL,
-    width: 200, height: 200,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.M
-  });
-
-  // Mini QR in header
-  new QRCode(document.getElementById("qrMini"), {
-    text: JOIN_URL,
-    width: 40, height: 40,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.L
-  });
-
-  // Show URL
-  document.getElementById("joinUrlDisplay").innerHTML =
-    `<strong>${window.location.hostname}</strong>/join`;
-}
-
-// ════════════════════════════════════════════════════════
-//  PHASE MANAGEMENT
-// ════════════════════════════════════════════════════════
-function setPhase(n) {
-  currentPhase = n;
-  document.querySelectorAll('.phase').forEach((p, i) => {
-    p.classList.toggle('active', i === n);
-  });
-  document.querySelectorAll('.nav-btn:not(.danger)').forEach((b, i) => {
-    b.classList.toggle('active', i === n);
-  });
-  document.querySelectorAll('.phase-pill').forEach((p, i) => {
-    p.classList.remove('active', 'done');
-    if (i === n) p.classList.add('active');
-    else if (i < n) p.classList.add('done');
-  });
-}
-
-async function goToTrain() {
-  setPhase(1);
-  if (!graphInitialized) {
-    await loadModel();
-    buildTrainGraph();
-  }
-}
-
-// ════════════════════════════════════════════════════════
-//  API
-// ════════════════════════════════════════════════════════
-async function loadCorpus() {
-  try {
-    const data = await fetch(`${API}/api/corpus`).then(r => r.json());
-
-    const oldLen = corpusCache.length;
-    corpusCache  = data.phrases;
-
-    // Update counter
-    const counter = document.getElementById('liveCounter');
-    const oldNum  = parseInt(document.getElementById('counterNum').textContent);
-    document.getElementById('counterNum').textContent = data.stats.total_phrases;
-    if (data.stats.total_phrases !== oldNum) {
-      counter.classList.add('bump');
-      setTimeout(() => counter.classList.remove('bump'), 400);
+    // Animation speed (ms per bigram) based on slider
+    function getSpeed() {
+      const v = parseInt(document.getElementById('speedSlider').value);
+      return [600, 400, 250, 120, 50][v - 1];
     }
 
-    // Update stats
-    document.getElementById('st0').textContent = data.stats.total_phrases;
-    document.getElementById('st1').textContent = data.stats.total_words;
-    document.getElementById('st2').textContent = data.stats.vocab_size;
+    // ════════════════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════════════════
+    let currentPhase = 0;
+    let corpusCache = [];
+    let modelCache = null;  // { word: { nextWord: { count, prob } } }
+    let trainRunning = false;
+    let predictRunning = false;
+    let trainSimulation = null;
+    let predictSimulation = null;
+    let trainNodes = [], trainLinks = [];
+    let graphInitialized = false;
+    let trainD3Node = null, trainD3Link = null;
+    let predictD3Node = null, predictD3Link = null, predictNodesData = null, predictLinksData = null;
 
-    // Add new phrases to stream
-    if (data.phrases.length > oldLen) {
-      const stream = document.getElementById('phraseStream');
-      for (let i = oldLen; i < data.phrases.length; i++) {
-        const div = document.createElement('div');
-        div.className = 'stream-phrase';
-        div.textContent = data.phrases[i];
-        stream.prepend(div);
-      }
-    }
-
-    return data;
-  } catch(e) {
-    console.error('Corpus load error:', e);
-  }
-}
-
-async function loadModel() {
-  try {
-    const data = await fetch(`${API}/api/model/probabilities`).then(r => r.json());
-    modelCache = data.model;
-    return data.model;
-  } catch(e) {
-    console.error('Model load error:', e);
-    return null;
-  }
-}
-
-async function resetCorpus() {
-  if (!confirm('¿Borrar todo el corpus? Esta acción no se puede deshacer.')) return;
-  await fetch(`${API}/api/corpus`, { method:'DELETE' });
-  corpusCache = [];
-  modelCache  = null;
-  graphInitialized = false;
-  document.getElementById('phraseStream').innerHTML = '';
-  document.getElementById('bigramLog').innerHTML = '';
-  document.getElementById('stepsLog').innerHTML = '';
-  document.getElementById('generatedBox').innerHTML = '<span style="color:var(--muted)">El texto aparecerá aquí...</span>';
-  document.getElementById('probBars').innerHTML = '';
-  setPhase(0);
-  loadCorpus();
-}
-
-// ════════════════════════════════════════════════════════
-//  HELPER: TOKENIZE
-// ════════════════════════════════════════════════════════
-function tokenize(text) {
-  return text.toLowerCase().replace(/[.,;:!?()""'']/g,'').split(/\s+/).filter(Boolean);
-}
-
-function buildBigrams(phrases) {
-  const pairs = [];
-  phrases.forEach(p => {
-    const words = tokenize(p);
-    for (let i = 0; i < words.length - 1; i++) {
-      pairs.push([words[i], words[i+1]]);
-    }
-  });
-  return pairs;
-}
-
-// ════════════════════════════════════════════════════════
-//  PHASE 1 — D3 TRAIN GRAPH
-// ════════════════════════════════════════════════════════
-function buildTrainGraph() {
-  if (!modelCache) return;
-  graphInitialized = true;
-
-  const svg    = d3.select('#trainSvg');
-  const width  = document.getElementById('trainSvg').clientWidth;
-  const height = document.getElementById('trainSvg').clientHeight;
-  svg.selectAll('*').remove();
-
-  // Build nodes + links from model
-  const nodeMap = {};
-  const linksData = [];
-
-  Object.entries(modelCache).forEach(([from, nexts]) => {
-    if (!nodeMap[from]) nodeMap[from] = { id: from, count: 0 };
-    Object.entries(nexts).forEach(([to, info]) => {
-      nodeMap[from].count += info.count;
-      if (!nodeMap[to]) nodeMap[to] = { id: to, count: 0 };
-      linksData.push({
-        source: from,
-        target: to,
-        count: info.count,
-        prob: info.prob,
-        id: `${from}→${to}`
+    // ════════════════════════════════════════════════════════
+    //  QR CODE GENERATION
+    // ════════════════════════════════════════════════════════
+    function initQR() {
+      // Large QR for phase 0
+      new QRCode(document.getElementById("qrLarge"), {
+        text: JOIN_URL,
+        width: 200, height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
       });
-    });
-  });
 
-  trainNodes = Object.values(nodeMap);
-  trainLinks = linksData;
+      // Mini QR in header
+      new QRCode(document.getElementById("qrMini"), {
+        text: JOIN_URL,
+        width: 40, height: 40,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.L
+      });
 
-  // Clamp node count (limit big corpora for visibility)
-  const maxNodes = 60;
-  if (trainNodes.length > maxNodes) {
-    const top = [...trainNodes].sort((a,b) => b.count - a.count).slice(0, maxNodes);
-    const topSet = new Set(top.map(n => n.id));
-    trainNodes = top;
-    trainLinks = trainLinks.filter(l => topSet.has(l.source) && topSet.has(l.target));
-  }
+      // Show URL
+      document.getElementById("joinUrlDisplay").innerHTML =
+        `<strong>${window.location.hostname}</strong>/join`;
+    }
 
-  // Defs: arrowhead
-  const defs = svg.append('defs');
-  defs.append('marker')
-    .attr('id','arrow-train')
-    .attr('viewBox','0 -5 10 10')
-    .attr('refX', 22).attr('refY', 0)
-    .attr('markerWidth', 5).attr('markerHeight', 5)
-    .attr('orient','auto')
-    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', '#7c3aed');
+    // ════════════════════════════════════════════════════════
+    //  PHASE MANAGEMENT
+    // ════════════════════════════════════════════════════════
+    function setPhase(n) {
+      currentPhase = n;
+      document.querySelectorAll('.phase').forEach((p, i) => {
+        p.classList.toggle('active', i === n);
+      });
+      document.querySelectorAll('footer .nav-btn:not(.danger)').forEach((b, i) => {
+        b.classList.toggle('active', i === n);
+      });
+      document.querySelectorAll('.phase-pill').forEach((p, i) => {
+        p.classList.remove('active', 'done');
+        if (i === n) p.classList.add('active');
+        else if (i < n) p.classList.add('done');
+      });
+    }
 
-  defs.append('marker')
-    .attr('id','arrow-active')
-    .attr('viewBox','0 -5 10 10')
-    .attr('refX', 22).attr('refY', 0)
-    .attr('markerWidth', 5).attr('markerHeight', 5)
-    .attr('orient','auto')
-    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', '#f59e0b');
-
-  defs.append('marker')
-    .attr('id','arrow-green')
-    .attr('viewBox','0 -5 10 10')
-    .attr('refX', 22).attr('refY', 0)
-    .attr('markerWidth', 5).attr('markerHeight', 5)
-    .attr('orient','auto')
-    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', '#10b981');
-
-  const g = svg.append('g');
-
-  // Zoom
-  svg.call(d3.zoom()
-    .scaleExtent([0.3, 3])
-    .on('zoom', e => g.attr('transform', e.transform)));
-
-  // Links
-  const link = g.append('g').selectAll('line')
-    .data(trainLinks).join('line')
-    .attr('class','link')
-    .attr('stroke-width', d => Math.max(1, Math.sqrt(d.count) * 1.5))
-    .attr('marker-end','url(#arrow-train)');
-
-  // Nodes group
-  const node = g.append('g').selectAll('g.node')
-    .data(trainNodes).join('g')
-    .attr('class','node')
-    .call(d3.drag()
-      .on('start', (e,d) => { if (!e.active) trainSimulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
-      .on('end',   (e,d) => { if (!e.active) trainSimulation.alphaTarget(0); d.fx=null; d.fy=null; }));
-
-  node.append('circle')
-    .attr('r', d => Math.max(14, 10 + d.count * 2))
-    .attr('fill', '#0b1120')
-    .attr('stroke', '#7c3aed')
-    .attr('stroke-width', 2);
-
-  node.append('text')
-    .text(d => d.id)
-    .attr('text-anchor','middle')
-    .attr('dy','0.35em')
-    .attr('font-size', d => Math.max(9, 7 + d.count))
-    .attr('fill','#e2e8f0');
-
-  // Force simulation
-  trainSimulation = d3.forceSimulation(trainNodes)
-    .force('link', d3.forceLink(trainLinks).id(d => d.id).distance(80).strength(0.5))
-    .force('charge', d3.forceManyBody().strength(-180))
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(d => Math.max(16,12 + d.count * 2) + 4))
-    .on('tick', () => {
-      link
-        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-      node.attr('transform', d => `translate(${d.x},${d.y})`);
-    });
-
-  // Store references for animation
-  svg._node   = node;
-  svg._link   = link;
-  svg._g      = g;
-  svg._width  = width;
-  svg._height = height;
-
-  // Attach button action
-  document.getElementById('navBtn1').onclick = async () => {
-    setPhase(1);
-    if (!trainRunning) await animateTraining();
-  };
-
-  setTrainStatus('Grafo listo — presiona <strong>ENTRENAR MODELO</strong> para ver la animación');
-}
-
-// ── TRAINING ANIMATION ──
-async function animateTraining() {
-  if (trainRunning || !modelCache || !graphInitialized) return;
-  trainRunning = true;
-
-  const svg   = d3.select('#trainSvg');
-  const node  = svg._node;
-  const link  = svg._link;
-  const log   = document.getElementById('bigramLog');
-
-  // Reset visibility
-  node.selectAll('circle').classed('visible', false);
-  node.selectAll('text').classed('visible', false);
-  link.classed('visible', false);
-  log.innerHTML = '';
-
-  // Build bigrams per phrase for ordered animation
-  const allBigrams = buildBigrams(corpusCache);
-  const total = allBigrams.length;
-  let done = 0;
-
-  // Track which nodes revealed
-  const revealedNodes = new Set();
-
-  const speed = getSpeed();
-
-  for (let pi = 0; pi < corpusCache.length; pi++) {
-    const phrase = corpusCache[pi];
-    const words  = tokenize(phrase);
-
-    // Show spotlight
-    const spot = document.getElementById('phraseSpotlight');
-    spot.textContent = phrase;
-    spot.classList.add('visible');
-    await delay(speed * 2);
-
-    for (let wi = 0; wi < words.length - 1; wi++) {
-      const from = words[wi];
-      const to   = words[wi + 1];
-
-      // Reveal nodes
-      if (!revealedNodes.has(from)) {
-        revealedNodes.add(from);
-        node.filter(d => d.id === from).selectAll('circle').classed('visible', true);
-        node.filter(d => d.id === from).selectAll('text').classed('visible', true);
+    async function goToTrain() {
+      setPhase(1);
+      if (!graphInitialized) {
+        await loadModel();
+        buildTrainGraph();
       }
-      if (!revealedNodes.has(to)) {
-        revealedNodes.add(to);
-        node.filter(d => d.id === to).selectAll('circle').classed('visible', true);
-        node.filter(d => d.id === to).selectAll('text').classed('visible', true);
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  API
+    // ════════════════════════════════════════════════════════
+    async function loadCorpus() {
+      try {
+        const data = await fetch(`${API}/api/corpus`).then(r => r.json());
+
+        const oldLen = corpusCache.length;
+        corpusCache = data.phrases;
+
+        // Update counter
+        const counter = document.getElementById('liveCounter');
+        const oldNum = parseInt(document.getElementById('counterNum').textContent);
+        document.getElementById('counterNum').textContent = data.stats.total_phrases;
+        if (data.stats.total_phrases !== oldNum) {
+          counter.classList.add('bump');
+          setTimeout(() => counter.classList.remove('bump'), 400);
+        }
+
+        // Update stats
+        document.getElementById('st0').textContent = data.stats.total_phrases;
+        document.getElementById('st1').textContent = data.stats.total_words;
+        document.getElementById('st2').textContent = data.stats.vocab_size;
+
+        // Add new phrases to stream
+        if (data.phrases.length > oldLen) {
+          const stream = document.getElementById('phraseStream');
+          for (let i = oldLen; i < data.phrases.length; i++) {
+            const div = document.createElement('div');
+            div.className = 'stream-phrase';
+            div.textContent = data.phrases[i];
+            stream.prepend(div);
+          }
+        }
+
+        return data;
+      } catch (e) {
+        console.error('Corpus load error:', e);
+      }
+    }
+
+    async function loadModel() {
+      try {
+        const data = await fetch(`${API}/api/model/probabilities`).then(r => r.json());
+        modelCache = data.model;
+        return data.model;
+      } catch (e) {
+        console.error('Model load error:', e);
+        return null;
+      }
+    }
+
+    async function resetCorpus() {
+      if (!confirm('¿Borrar todo el corpus? Esta acción no se puede deshacer.')) return;
+      await fetch(`${API}/api/corpus`, { method: 'DELETE' });
+      corpusCache = [];
+      modelCache = null;
+      graphInitialized = false;
+      document.getElementById('phraseStream').innerHTML = '';
+      document.getElementById('bigramLog').innerHTML = '';
+      document.getElementById('stepsLog').innerHTML = '';
+      document.getElementById('generatedBox').innerHTML = '<span style="color:var(--muted)">El texto aparecerá aquí...</span>';
+      document.getElementById('probBars').innerHTML = '';
+      setPhase(0);
+      loadCorpus();
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  HELPER: TOKENIZE
+    // ════════════════════════════════════════════════════════
+    function tokenize(text) {
+      return text.toLowerCase().replace(/[.,;:!?()""'']/g, '').split(/\s+/).filter(Boolean);
+    }
+
+    function buildBigrams(phrases) {
+      const pairs = [];
+      phrases.forEach(p => {
+        const words = tokenize(p);
+        for (let i = 0; i < words.length - 1; i++) {
+          pairs.push([words[i], words[i + 1]]);
+        }
+      });
+      return pairs;
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  PHASE 1 — D3 TRAIN GRAPH
+    // ════════════════════════════════════════════════════════
+    function buildTrainGraph() {
+      if (!modelCache) return;
+      graphInitialized = true;
+
+      const svg = d3.select('#trainSvg');
+      const width = document.getElementById('trainSvg').clientWidth;
+      const height = document.getElementById('trainSvg').clientHeight;
+      svg.selectAll('*').remove();
+
+      // Build nodes + links from model
+      const nodeMap = {};
+      const linksData = [];
+
+      Object.entries(modelCache).forEach(([from, nexts]) => {
+        if (!nodeMap[from]) nodeMap[from] = { id: from, count: 0 };
+        Object.entries(nexts).forEach(([to, info]) => {
+          nodeMap[from].count += info.count;
+          if (!nodeMap[to]) nodeMap[to] = { id: to, count: 0 };
+          linksData.push({
+            source: from,
+            target: to,
+            count: info.count,
+            prob: info.prob,
+            id: `${from}→${to}`
+          });
+        });
+      });
+
+      trainNodes = Object.values(nodeMap);
+      trainLinks = linksData;
+
+      // Clamp node count (limit big corpora for visibility)
+      const maxNodes = 60;
+      if (trainNodes.length > maxNodes) {
+        const top = [...trainNodes].sort((a, b) => b.count - a.count).slice(0, maxNodes);
+        const topSet = new Set(top.map(n => n.id));
+        trainNodes = top;
+        trainLinks = trainLinks.filter(l => topSet.has(l.source) && topSet.has(l.target));
       }
 
-      // Highlight & reveal edge
-      const edge = link.filter(d =>
-        (typeof d.source === 'object' ? d.source.id : d.source) === from &&
-        (typeof d.target === 'object' ? d.target.id : d.target) === to
-      );
-      edge.classed('visible', true).classed('highlighted', true);
-      setTimeout(() => edge.classed('highlighted', false), speed * 3);
+      // Defs: arrowhead
+      const defs = svg.append('defs');
+      defs.append('marker')
+        .attr('id', 'arrow-train')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 22).attr('refY', 0)
+        .attr('markerWidth', 5).attr('markerHeight', 5)
+        .attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#7c3aed');
 
-      // Log bigram
-      done++;
-      const pct = Math.round((done / total) * 100);
-      document.getElementById('trainBar').style.width = pct + '%';
+      defs.append('marker')
+        .attr('id', 'arrow-active')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 22).attr('refY', 0)
+        .attr('markerWidth', 5).attr('markerHeight', 5)
+        .attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#f59e0b');
 
-      const info = modelCache[from]?.[to];
-      const entry = document.createElement('div');
-      entry.className = 'bigram-entry new';
-      entry.innerHTML = `
+      defs.append('marker')
+        .attr('id', 'arrow-green')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 22).attr('refY', 0)
+        .attr('markerWidth', 5).attr('markerHeight', 5)
+        .attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#10b981');
+
+      const g = svg.append('g');
+
+      // Zoom
+      svg.call(d3.zoom()
+        .scaleExtent([0.3, 3])
+        .on('zoom', e => g.attr('transform', e.transform)));
+
+      // Links
+      const link = g.append('g').selectAll('line')
+        .data(trainLinks).join('line')
+        .attr('class', 'link')
+        .attr('stroke-width', d => Math.max(1, Math.sqrt(d.count) * 1.5))
+        .attr('marker-end', 'url(#arrow-train)');
+
+      // Nodes group
+      const node = g.append('g').selectAll('g.node')
+        .data(trainNodes).join('g')
+        .attr('class', 'node')
+        .call(d3.drag()
+          .on('start', (e, d) => { if (!e.active) trainSimulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+          .on('end', (e, d) => { if (!e.active) trainSimulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+      node.append('circle')
+        .attr('r', d => Math.max(14, 10 + d.count * 2))
+        .attr('fill', '#0b1120')
+        .attr('stroke', '#7c3aed')
+        .attr('stroke-width', 2);
+
+      node.append('text')
+        .text(d => d.id)
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em')
+        .attr('font-size', d => Math.max(9, 7 + d.count))
+        .attr('fill', '#e2e8f0');
+
+      // Force simulation
+      trainSimulation = d3.forceSimulation(trainNodes)
+        .force('link', d3.forceLink(trainLinks).id(d => d.id).distance(80).strength(0.5))
+        .force('charge', d3.forceManyBody().strength(-180))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => Math.max(16, 12 + d.count * 2) + 4))
+        .on('tick', () => {
+          link
+            .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+          node.attr('transform', d => `translate(${d.x},${d.y})`);
+        });
+
+      // Store references for animation
+      trainD3Node = node;
+      trainD3Link = link;
+
+      // Attach button action
+      document.getElementById('navBtn1').onclick = async () => {
+        setPhase(1);
+        if (!trainRunning) await animateTraining();
+      };
+
+      setTrainStatus('Grafo listo — presiona <strong>ENTRENAR MODELO</strong> para ver la animación');
+    }
+
+    // ── TRAINING ANIMATION ──
+    async function animateTraining() {
+      if (trainRunning || !modelCache || !graphInitialized) return;
+      trainRunning = true;
+
+      const svg = d3.select('#trainSvg');
+      const node = trainD3Node;
+      const link = trainD3Link;
+      const log = document.getElementById('bigramLog');
+
+      // Reset visibility
+      node.selectAll('circle').classed('visible', false);
+      node.selectAll('text').classed('visible', false);
+      link.classed('visible', false);
+      log.innerHTML = '';
+
+      // Build bigrams per phrase for ordered animation
+      const allBigrams = buildBigrams(corpusCache);
+      const total = allBigrams.length;
+      let done = 0;
+
+      // Track which nodes revealed
+      const revealedNodes = new Set();
+
+      const speed = getSpeed();
+
+      for (let pi = 0; pi < corpusCache.length; pi++) {
+        const phrase = corpusCache[pi];
+        const words = tokenize(phrase);
+
+        // Show spotlight
+        const spot = document.getElementById('phraseSpotlight');
+        spot.textContent = phrase;
+        spot.classList.add('visible');
+        await delay(speed * 2);
+
+        for (let wi = 0; wi < words.length - 1; wi++) {
+          const from = words[wi];
+          const to = words[wi + 1];
+
+          // Reveal nodes
+          if (!revealedNodes.has(from)) {
+            revealedNodes.add(from);
+            node.filter(d => d.id === from).selectAll('circle').classed('visible', true);
+            node.filter(d => d.id === from).selectAll('text').classed('visible', true);
+          }
+          if (!revealedNodes.has(to)) {
+            revealedNodes.add(to);
+            node.filter(d => d.id === to).selectAll('circle').classed('visible', true);
+            node.filter(d => d.id === to).selectAll('text').classed('visible', true);
+          }
+
+          // Highlight & reveal edge
+          const edge = link.filter(d =>
+            (typeof d.source === 'object' ? d.source.id : d.source) === from &&
+            (typeof d.target === 'object' ? d.target.id : d.target) === to
+          );
+          edge.classed('visible', true).classed('highlighted', true);
+          setTimeout(() => edge.classed('highlighted', false), speed * 3);
+
+          // Log bigram
+          done++;
+          const pct = Math.round((done / total) * 100);
+          document.getElementById('trainBar').style.width = pct + '%';
+
+          const info = modelCache[from]?.[to];
+          const entry = document.createElement('div');
+          entry.className = 'bigram-entry new';
+          entry.innerHTML = `
         <span class="bigram-from">${from}</span>
         <span class="bigram-arr"> → </span>
         <span class="bigram-to">${to}</span>
         <span class="bigram-cnt">${info ? (info.prob * 100).toFixed(0) + '%' : ''}</span>
       `;
-      log.prepend(entry);
-      setTimeout(() => entry.classList.remove('new'), 800);
+          log.prepend(entry);
+          setTimeout(() => entry.classList.remove('new'), 800);
 
-      // Keep log scrolled to top
-      log.scrollTop = 0;
+          // Keep log scrolled to top
+          log.scrollTop = 0;
 
-      setTrainStatus(`<strong>Procesando:</strong> "${phrase.substring(0,50)}..." · Bigrama <strong>${done}/${total}</strong>`);
+          setTrainStatus(`<strong>Procesando:</strong> "${phrase.substring(0, 50)}..." · Bigrama <strong>${done}/${total}</strong>`);
 
-      await delay(speed);
+          await delay(speed);
+        }
+
+        spot.classList.remove('visible');
+        await delay(speed);
+      }
+
+      // Reveal remaining
+      node.selectAll('circle').classed('visible', true);
+      node.selectAll('text').classed('visible', true);
+      link.classed('visible', true);
+
+      setTrainStatus(`<strong>✓ Entrenamiento completo</strong> · ${trainNodes.length} palabras · ${trainLinks.length} bigramas aprendidos`);
+      document.getElementById('trainBar').style.width = '100%';
+
+      trainRunning = false;
     }
 
-    spot.classList.remove('visible');
-    await delay(speed);
-  }
+    function setTrainStatus(html) {
+      const el = document.getElementById('trainStatus');
+      el.innerHTML = html + `<div class="train-progress"><div class="train-progress-fill" id="trainBar" style="width:${document.getElementById('trainBar')?.style.width || '0%'}"></div></div>`;
+    }
 
-  // Reveal remaining
-  node.selectAll('circle').classed('visible', true);
-  node.selectAll('text').classed('visible', true);
-  link.classed('visible', true);
+    // ════════════════════════════════════════════════════════
+    //  PHASE 2 — PREDICTION GRAPH
+    // ════════════════════════════════════════════════════════
+    function buildPredictGraph() {
+      if (!modelCache) return;
 
-  setTrainStatus(`<strong>✓ Entrenamiento completo</strong> · ${trainNodes.length} palabras · ${trainLinks.length} bigramas aprendidos`);
-  document.getElementById('trainBar').style.width = '100%';
+      const svg = d3.select('#predictSvg');
+      const width = document.getElementById('predictSvg').clientWidth;
+      const height = document.getElementById('predictSvg').clientHeight;
+      svg.selectAll('*').remove();
 
-  trainRunning = false;
-}
+      // Reuse train nodes/links and their positions for a smooth transition
+      const nodes = trainNodes.map(n => ({ ...n, x: n.x, y: n.y, vx: 0, vy: 0 }));
+      const links = trainLinks.map(l => ({
+        ...l,
+        source: typeof l.source === 'object' ? l.source.id : l.source,
+        target: typeof l.target === 'object' ? l.target.id : l.target
+      }));
 
-function setTrainStatus(html) {
-  const el = document.getElementById('trainStatus');
-  el.innerHTML = html + `<div class="train-progress"><div class="train-progress-fill" id="trainBar" style="width:${document.getElementById('trainBar')?.style.width || '0%'}"></div></div>`;
-}
+      const defs = svg.append('defs');
+      ['arrow-train', 'arrow-active', 'arrow-green'].forEach((id, i) => {
+        const colors = ['#7c3aed', '#f59e0b', '#10b981'];
+        defs.append('marker').attr('id', id)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 22).attr('refY', 0)
+          .attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+          .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', colors[i]);
+      });
 
-// ════════════════════════════════════════════════════════
-//  PHASE 2 — PREDICTION GRAPH
-// ════════════════════════════════════════════════════════
-function buildPredictGraph() {
-  if (!modelCache) return;
+      const g = svg.append('g');
+      svg.call(d3.zoom().scaleExtent([0.3, 3]).on('zoom', e => g.attr('transform', e.transform)));
 
-  const svg    = d3.select('#predictSvg');
-  const width  = document.getElementById('predictSvg').clientWidth;
-  const height = document.getElementById('predictSvg').clientHeight;
-  svg.selectAll('*').remove();
+      const link = g.append('g').selectAll('line')
+        .data(links).join('line')
+        .attr('class', 'link visible')
+        .attr('stroke-width', d => Math.max(1, Math.sqrt(d.count) * 1.2))
+        .attr('marker-end', 'url(#arrow-train)');
 
-  // Reuse train nodes/links
-  const nodes = trainNodes.map(n => ({ ...n, x: undefined, y: undefined }));
-  const links = trainLinks.map(l => ({ ...l }));
+      const node = g.append('g').selectAll('g.node')
+        .data(nodes).join('g').attr('class', 'node')
+        .on('click', (e, d) => {
+          document.getElementById('seedInput').value = d.id;
+        })
+        .call(d3.drag()
+          .on('start', (e, d) => { if (!e.active) predictSimulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+          .on('end', (e, d) => { if (!e.active) predictSimulation.alphaTarget(0); d.fx = null; d.fy = null; }));
 
-  const defs = svg.append('defs');
-  ['arrow-train','arrow-active','arrow-green'].forEach((id, i) => {
-    const colors = ['#7c3aed','#f59e0b','#10b981'];
-    defs.append('marker').attr('id', id)
-      .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
-      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
-      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill', colors[i]);
-  });
+      node.append('circle')
+        .attr('r', d => Math.max(14, 10 + d.count * 2))
+        .attr('fill', '#0b1120')
+        .attr('stroke', '#7c3aed').attr('stroke-width', 2).classed('visible', true);
 
-  const g = svg.append('g');
-  svg.call(d3.zoom().scaleExtent([0.3,3]).on('zoom', e => g.attr('transform', e.transform)));
+      node.append('text')
+        .text(d => d.id)
+        .attr('text-anchor', 'middle').attr('dy', '0.35em')
+        .attr('font-size', d => Math.max(9, 7 + d.count))
+        .attr('fill', '#e2e8f0').classed('visible', true);
 
-  const link = g.append('g').selectAll('line')
-    .data(links).join('line')
-    .attr('class','link visible')
-    .attr('stroke-width', d => Math.max(1, Math.sqrt(d.count) * 1.2))
-    .attr('marker-end','url(#arrow-train)');
+      predictSimulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(0.5))
+        .force('charge', d3.forceManyBody().strength(-180))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => Math.max(16, 12 + d.count * 2) + 4))
+        .on('tick', () => {
+          link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+          node.attr('transform', d => `translate(${d.x},${d.y})`);
+        });
 
-  const node = g.append('g').selectAll('g.node')
-    .data(nodes).join('g').attr('class','node')
-    .on('click', (e,d) => {
-      document.getElementById('seedInput').value = d.id;
-    })
-    .call(d3.drag()
-      .on('start', (e,d) => { if (!e.active) predictSimulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
-      .on('end',   (e,d) => { if (!e.active) predictSimulation.alphaTarget(0); d.fx=null; d.fy=null; }));
+      predictD3Node = node;
+      predictD3Link = link;
+      predictNodesData = nodes;
+      predictLinksData = links;
+    }
 
-  node.append('circle')
-    .attr('r', d => Math.max(14, 10 + d.count * 2))
-    .attr('fill','#0b1120')
-    .attr('stroke','#7c3aed').attr('stroke-width',2).classed('visible',true);
+    // ── PREDICTION ANIMATION ──
+    async function startPrediction() {
+      if (predictRunning) return;
+      if (!modelCache) { await loadModel(); buildPredictGraph(); }
 
-  node.append('text')
-    .text(d => d.id)
-    .attr('text-anchor','middle').attr('dy','0.35em')
-    .attr('font-size', d => Math.max(9, 7 + d.count))
-    .attr('fill','#e2e8f0').classed('visible',true);
+      const seed = document.getElementById('seedInput').value.trim().toLowerCase();
+      if (!seed) return;
+      if (!modelCache[seed]) {
+        document.getElementById('generatedBox').innerHTML =
+          `<span style="color:#ef4444">"${seed}" no está en el vocabulario</span>`;
+        return;
+      }
 
-  predictSimulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(0.5))
-    .force('charge', d3.forceManyBody().strength(-180))
-    .force('center', d3.forceCenter(width/2, height/2))
-    .force('collision', d3.forceCollide().radius(d => Math.max(16,12+d.count*2)+4))
-    .on('tick', () => {
-      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
-          .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-      node.attr('transform',d=>`translate(${d.x},${d.y})`);
-    });
+      predictRunning = true;
+      document.getElementById('predictBtn').disabled = true;
 
-  svg._node  = node;
-  svg._link  = link;
-  svg._nodes = nodes;
-  svg._links = links;
-  svg._g     = g;
-}
+      const svg = d3.select('#predictSvg');
+      const node = predictD3Node;
+      const link = predictD3Link;
+      const nodes = predictNodesData;
+      const links = predictLinksData;
 
-// ── PREDICTION ANIMATION ──
-async function startPrediction() {
-  if (predictRunning) return;
-  if (!modelCache) { await loadModel(); buildPredictGraph(); }
+      // Reset
+      node.selectAll('circle').classed('active-node', false).classed('path-node', false)
+        .attr('stroke', '#7c3aed').attr('stroke-width', 2);
+      link.classed('highlighted', false).classed('path-active', false)
+        .attr('marker-end', 'url(#arrow-train)');
+      document.getElementById('stepsLog').innerHTML = '';
+      document.getElementById('generatedBox').innerHTML = '';
+      document.getElementById('probBars').innerHTML = '';
 
-  const seed = document.getElementById('seedInput').value.trim().toLowerCase();
-  if (!seed) return;
-  if (!modelCache[seed]) {
-    document.getElementById('generatedBox').innerHTML =
-      `<span style="color:#ef4444">"${seed}" no está en el vocabulario</span>`;
-    return;
-  }
+      const generated = [seed];
+      let current = seed;
 
-  predictRunning = true;
-  document.getElementById('predictBtn').disabled = true;
+      // Show seed node
+      highlightNode(node, seed, 'active');
+      appendGenWord(seed, true);
 
-  const svg   = d3.select('#predictSvg');
-  const node  = svg._node;
-  const link  = svg._link;
-  const nodes = svg._nodes;
-  const links = svg._links;
+      for (let step = 0; step < 9; step++) {
+        const nexts = modelCache[current];
+        if (!nexts || Object.keys(nexts).length === 0) break;
 
-  // Reset
-  node.selectAll('circle').classed('active-node', false).classed('path-node', false)
-    .attr('stroke','#7c3aed').attr('stroke-width',2);
-  link.classed('highlighted',false).classed('path-active',false)
-    .attr('marker-end','url(#arrow-train)');
-  document.getElementById('stepsLog').innerHTML = '';
-  document.getElementById('generatedBox').innerHTML = '';
-  document.getElementById('probBars').innerHTML = '';
+        const total = Object.values(nexts).reduce((s, v) => s + v.count, 0);
+        const sorted = Object.entries(nexts).sort((a, b) => b[1].prob - a[1].prob);
 
-  const generated = [seed];
-  let current = seed;
+        // Show probability bars
+        showProbBars(sorted, null);
+        await delay(900);
 
-  // Show seed node
-  highlightNode(node, seed, 'active');
-  appendGenWord(seed, true);
+        // Choose next (weighted random)
+        const chosen = weightedChoose(nexts);
+        const chosenInfo = nexts[chosen];
 
-  for (let step = 0; step < 9; step++) {
-    const nexts = modelCache[current];
-    if (!nexts || Object.keys(nexts).length === 0) break;
+        // Highlight chosen bar
+        showProbBars(sorted, chosen);
+        await delay(400);
 
-    const total = Object.values(nexts).reduce((s,v)=>s+v.count,0);
-    const sorted = Object.entries(nexts).sort((a,b)=>b[1].prob-a[1].prob);
+        // Animate ball along edge
+        await animateBall(svg, nodes, current, chosen);
 
-    // Show probability bars
-    showProbBars(sorted, null);
-    await delay(900);
+        // Highlight edge and next node
+        highlightEdge(link, current, chosen);
+        highlightNode(node, current, 'path');
+        highlightNode(node, chosen, 'active');
 
-    // Choose next (weighted random)
-    const chosen = weightedChoose(nexts);
-    const chosenInfo = nexts[chosen];
+        // Log step
+        const entry = document.createElement('div');
+        entry.className = 'step-entry';
+        entry.innerHTML =
+          `<span class="step-from">${current}</span>` +
+          ` → <span class="step-to">${chosen}</span>` +
+          ` · <span class="step-frac">${chosenInfo.count}/${total}</span>` +
+          ` = <span class="step-prob">${(chosenInfo.prob * 100).toFixed(0)}%</span>`;
+        document.getElementById('stepsLog').prepend(entry);
 
-    // Highlight chosen bar
-    showProbBars(sorted, chosen);
-    await delay(400);
+        // Append word to generated text
+        appendGenWord(chosen, false);
 
-    // Animate ball along edge
-    await animateBall(svg, nodes, current, chosen);
+        generated.push(chosen);
+        current = chosen;
+        await delay(300);
+      }
 
-    // Highlight edge and next node
-    highlightEdge(link, current, chosen);
-    highlightNode(node, current, 'path');
-    highlightNode(node, chosen, 'active');
+      document.getElementById('probBars').innerHTML = '';
+      predictRunning = false;
+      document.getElementById('predictBtn').disabled = false;
+    }
 
-    // Log step
-    const entry = document.createElement('div');
-    entry.className = 'step-entry';
-    entry.innerHTML =
-      `<span class="step-from">${current}</span>` +
-      ` → <span class="step-to">${chosen}</span>` +
-      ` · <span class="step-frac">${chosenInfo.count}/${total}</span>` +
-      ` = <span class="step-prob">${(chosenInfo.prob*100).toFixed(0)}%</span>`;
-    document.getElementById('stepsLog').prepend(entry);
+    // ── Graph helpers ──
+    function highlightNode(nodeSel, id, type) {
+      nodeSel.filter(d => d.id === id).selectAll('circle')
+        .classed('active-node', type === 'active')
+        .classed('path-node', type === 'path')
+        .attr('stroke', type === 'active' ? '#f59e0b' : type === 'path' ? '#10b981' : '#7c3aed')
+        .attr('stroke-width', (type === 'active' || type === 'path') ? 3 : 2);
+    }
 
-    // Append word to generated text
-    appendGenWord(chosen, false);
+    function highlightEdge(linkSel, from, to) {
+      linkSel.filter(d =>
+        (typeof d.source === 'object' ? d.source.id : d.source) === from &&
+        (typeof d.target === 'object' ? d.target.id : d.target) === to
+      ).classed('path-active', true).attr('marker-end', 'url(#arrow-green)');
+    }
 
-    generated.push(chosen);
-    current = chosen;
-    await delay(300);
-  }
+    function animateBall(svg, nodes, fromId, toId) {
+      return new Promise(resolve => {
+        const fn = nodes.find(n => n.id === fromId);
+        const tn = nodes.find(n => n.id === toId);
+        if (!fn || !tn) { resolve(); return; }
 
-  document.getElementById('probBars').innerHTML = '';
-  predictRunning = false;
-  document.getElementById('predictBtn').disabled = false;
-}
+        const svgEl = svg.node();
+        const ball = svg.select('g').append('circle')
+          .attr('class', 'travel-ball')
+          .attr('r', 8)
+          .attr('cx', fn.x).attr('cy', fn.y);
 
-// ── Graph helpers ──
-function highlightNode(nodeSel, id, type) {
-  nodeSel.filter(d => d.id === id).selectAll('circle')
-    .classed('active-node', type === 'active')
-    .classed('path-node',   type === 'path')
-    .attr('stroke', type === 'active' ? '#f59e0b' : type === 'path' ? '#10b981' : '#7c3aed')
-    .attr('stroke-width', (type === 'active' || type === 'path') ? 3 : 2);
-}
+        ball.transition().duration(600).ease(d3.easeCubicInOut)
+          .attr('cx', tn.x).attr('cy', tn.y)
+          .on('end', () => { ball.remove(); resolve(); });
+      });
+    }
 
-function highlightEdge(linkSel, from, to) {
-  linkSel.filter(d =>
-    (typeof d.source==='object'?d.source.id:d.source)===from &&
-    (typeof d.target==='object'?d.target.id:d.target)===to
-  ).classed('path-active',true).attr('marker-end','url(#arrow-green)');
-}
-
-function animateBall(svg, nodes, fromId, toId) {
-  return new Promise(resolve => {
-    const fn = nodes.find(n => n.id === fromId);
-    const tn = nodes.find(n => n.id === toId);
-    if (!fn || !tn) { resolve(); return; }
-
-    const svgEl = svg.node();
-    const ball  = svg.select('g').append('circle')
-      .attr('class','travel-ball')
-      .attr('r', 8)
-      .attr('cx', fn.x).attr('cy', fn.y);
-
-    ball.transition().duration(600).ease(d3.easeCubicInOut)
-      .attr('cx', tn.x).attr('cy', tn.y)
-      .on('end', () => { ball.remove(); resolve(); });
-  });
-}
-
-function showProbBars(sorted, chosen) {
-  const container = document.getElementById('probBars');
-  container.innerHTML = '';
-  const top = sorted.slice(0, 6);
-  top.forEach(([word, info], i) => {
-    const isChosen = word === chosen;
-    const row = document.createElement('div');
-    row.className = 'prob-row';
-    row.style.animationDelay = `${i * 0.04}s`;
-    row.innerHTML = `
-      <span class="prob-word" style="${isChosen?'color:var(--green);font-weight:700':''}">${word}</span>
+    function showProbBars(sorted, chosen) {
+      const container = document.getElementById('probBars');
+      container.innerHTML = '';
+      const top = sorted.slice(0, 6);
+      top.forEach(([word, info], i) => {
+        const isChosen = word === chosen;
+        const row = document.createElement('div');
+        row.className = 'prob-row';
+        row.style.animationDelay = `${i * 0.04}s`;
+        row.innerHTML = `
+      <span class="prob-word" style="${isChosen ? 'color:var(--green);font-weight:700' : ''}">${word}</span>
       <div class="prob-bar-bg">
-        <div class="prob-bar-fg ${isChosen?'selected':''}" style="width:0%"
-             data-target="${(info.prob*100).toFixed(1)}"></div>
+        <div class="prob-bar-fg ${isChosen ? 'selected' : ''}" style="width:0%"
+             data-target="${(info.prob * 100).toFixed(1)}"></div>
       </div>
-      <span class="prob-pct">${(info.prob*100).toFixed(0)}%</span>
+      <span class="prob-pct">${(info.prob * 100).toFixed(0)}%</span>
     `;
-    container.appendChild(row);
-  });
-  setTimeout(() => {
-    container.querySelectorAll('.prob-bar-fg').forEach(b => {
-      b.style.width = b.dataset.target + '%';
+        container.appendChild(row);
+      });
+      setTimeout(() => {
+        container.querySelectorAll('.prob-bar-fg').forEach(b => {
+          b.style.width = b.dataset.target + '%';
+        });
+      }, 30);
+    }
+
+    function appendGenWord(word, isSeed) {
+      const box = document.getElementById('generatedBox');
+      const span = document.createElement('span');
+      span.className = isSeed ? 'gen-word-seed' : 'gen-word-new';
+      span.style.animationDelay = '0s';
+      span.textContent = (box.children.length > 0 ? ' ' : '') + word;
+      box.appendChild(span);
+    }
+
+    function weightedChoose(nexts) {
+      const entries = Object.entries(nexts);
+      const total = entries.reduce((s, [, v]) => s + v.count, 0);
+      let r = Math.random() * total;
+      for (const [w, v] of entries) {
+        r -= v.count;
+        if (r <= 0) return w;
+      }
+      return entries[entries.length - 1][0];
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  UTILS
+    // ════════════════════════════════════════════════════════
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ════════════════════════════════════════════════════════
+    //  Override navBtn1 after graph build
+    // ════════════════════════════════════════════════════════
+    document.getElementById('navBtn1').addEventListener('click', async () => {
+      setPhase(1);
+      if (!modelCache) await loadModel();
+      if (!graphInitialized) buildTrainGraph();
+      if (!trainRunning) animateTraining();
     });
-  }, 30);
-}
 
-function appendGenWord(word, isSeed) {
-  const box = document.getElementById('generatedBox');
-  const span = document.createElement('span');
-  span.className = isSeed ? 'gen-word-seed' : 'gen-word-new';
-  span.style.animationDelay = '0s';
-  span.textContent = (box.children.length > 0 ? ' ' : '') + word;
-  box.appendChild(span);
-}
+    document.getElementById('navBtn2').addEventListener('click', async () => {
+      setPhase(2);
+      if (!modelCache) await loadModel();
+      if (!graphInitialized) { buildTrainGraph(); }
+      buildPredictGraph();
+    });
 
-function weightedChoose(nexts) {
-  const entries = Object.entries(nexts);
-  const total   = entries.reduce((s,[,v])=>s+v.count,0);
-  let r = Math.random() * total;
-  for (const [w, v] of entries) {
-    r -= v.count;
-    if (r <= 0) return w;
-  }
-  return entries[entries.length-1][0];
-}
+    document.getElementById('navBtn3').addEventListener('click', async () => {
+      setPhase(3);
+    });
 
-// ════════════════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════════════════
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+    document.getElementById('seedInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') startPrediction();
+    });
 
-// ════════════════════════════════════════════════════════
-//  Override navBtn1 after graph build
-// ════════════════════════════════════════════════════════
-document.getElementById('navBtn1').addEventListener('click', async () => {
-  setPhase(1);
-  if (!modelCache) await loadModel();
-  if (!graphInitialized) buildTrainGraph();
-  if (!trainRunning) animateTraining();
-});
+    document.getElementById('llmSeedInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') startLLMPrediction();
+    });
 
-document.getElementById('navBtn2').addEventListener('click', async () => {
-  setPhase(2);
-  if (!modelCache) await loadModel();
-  if (!graphInitialized) { buildTrainGraph(); }
-  buildPredictGraph();
-});
+    // ════════════════════════════════════════════════════════
+    //  PHASE 3 — LLM CONTEXTUAL PREDICTION
+    // ════════════════════════════════════════════════════════
+    let llmRunning = false;
 
-document.getElementById('seedInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') startPrediction();
-});
+    async function startLLMPrediction() {
+      if (llmRunning) return;
+      if (!corpusCache || corpusCache.length === 0) {
+        document.getElementById('llmTextArea').innerHTML = '<span style="color:#ef4444">El corpus está vacío</span>';
+        return;
+      }
 
-// ════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════
-(async () => {
-  initQR();
-  await loadCorpus();
-  setInterval(async () => {
-    if (currentPhase === 0) await loadCorpus();
-  }, 2500);
-})();
-</script>
+      const seed = document.getElementById('llmSeedInput').value.trim().toLowerCase();
+      if (!seed) return;
+
+      llmRunning = true;
+      document.getElementById('llmPredictBtn').disabled = true;
+      document.getElementById('llmTextArea').innerHTML = '';
+      document.getElementById('llmContextLog').innerHTML = '';
+
+      let generated = [seed];
+      appendLLMWord(seed);
+
+      for (let step = 0; step < 15; step++) {
+        await delay(800);
+
+        let attempt = null;
+        // Try to find the longest matching context, up to 5 previous words
+        for (let n = 6; n >= 2; n--) {
+          if (generated.length >= n - 1) {
+            let ctxWords = generated.slice(-(n - 1));
+            let nexts = getNextsForContext(ctxWords);
+            if (Object.keys(nexts).length > 0) {
+              attempt = { nexts, ctxWords, n };
+              break;
+            }
+          }
+        }
+
+        if (!attempt) break; // dead end
+
+        // Highlight attending words
+        highlightAttendingWords(attempt.ctxWords.length);
+        await delay(1200);
+
+        // Choose next
+        const chosen = weightedChoose(attempt.nexts);
+        const total = Object.values(attempt.nexts).reduce((a, b) => a + b, 0);
+        const count = attempt.nexts[chosen];
+        const prob = (count / total * 100).toFixed(0);
+
+        // Log
+        addLLMLog(attempt.ctxWords, chosen, count, total, prob);
+
+        // Append word
+        appendLLMWord(chosen);
+        generated.push(chosen);
+
+        unhighlightWords();
+        await delay(200);
+      }
+
+      llmRunning = false;
+      document.getElementById('llmPredictBtn').disabled = false;
+    }
+
+    function getNextsForContext(ctxWords) {
+      let nexts = {};
+      const n = ctxWords.length + 1;
+      corpusCache.forEach(p => {
+        let pWords = tokenize(p);
+        for (let i = 0; i <= pWords.length - n; i++) {
+          let match = true;
+          for (let j = 0; j < ctxWords.length; j++) {
+            if (pWords[i + j] !== ctxWords[j]) match = false;
+          }
+          if (match) {
+            let nxt = pWords[i + ctxWords.length];
+            nexts[nxt] = (nexts[nxt] || 0) + 1;
+          }
+        }
+      });
+      return nexts;
+    }
+
+    function appendLLMWord(word) {
+      const area = document.getElementById('llmTextArea');
+      const div = document.createElement('div');
+      div.className = 'llm-word';
+      div.textContent = word;
+      area.appendChild(div);
+    }
+
+    function highlightAttendingWords(numWords) {
+      const children = document.getElementById('llmTextArea').children;
+      for (let i = 0; i < children.length; i++) {
+        if (i >= children.length - numWords) {
+          children[i].classList.add('attending');
+        }
+      }
+    }
+
+    function unhighlightWords() {
+      const children = document.getElementById('llmTextArea').children;
+      for (let i = 0; i < children.length; i++) {
+        children[i].classList.remove('attending');
+      }
+    }
+
+    function addLLMLog(ctxWords, chosen, count, total, prob) {
+      const log = document.getElementById('llmContextLog');
+      const entry = document.createElement('div');
+      entry.className = 'context-entry';
+      entry.innerHTML = `
+           Foco de Atención puesto en: <span class="context-words">"${ctxWords.join(' ')}"</span><br>
+           Próximo Token Generado: <span class="context-new">"${chosen}"</span><br>
+           <span style="color:var(--muted);font-size:0.65rem">Apariciones de este patrón: ${count}/${total} = ${prob}%</span>
+        `;
+      log.prepend(entry);
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  DEFAULT PHRASES
+    // ════════════════════════════════════════════════════════
+    const defaultPhrases = [
+      "las matemáticas son el alfabeto con el cual dios ha escrito el universo",
+      "la esencia de las matemáticas no es hacer las cosas simples complicadas",
+      "en las matemáticas el arte de proponer una pregunta debe tener valor",
+      "las matemáticas puras son en su forma la poesía de las ideas lógicas",
+      "sin matemáticas no hay nada que puedas hacer",
+      "la matemática es la ciencia del orden y la medida",
+      "los números gobiernan el universo entero",
+      "el estudio profundo de la naturaleza es la fuente más fértil de descubrimientos",
+      "las matemáticas son la puerta y la llave de las ciencias",
+      "dios usó hermosas matemáticas al crear el mundo"
+    ];
+
+    async function loadDefaultPhrases() {
+      const btn = document.getElementById('defaultPhrasesBtn');
+      const originalText = btn.textContent;
+      btn.textContent = "Cargando...";
+      btn.disabled = true;
+
+      for (const phrase of defaultPhrases) {
+        try {
+          await fetch(`${API}/api/corpus/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phrase })
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      await loadCorpus();
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════════════════
+    (async () => {
+      initQR();
+      await loadCorpus();
+      setInterval(async () => {
+        if (currentPhase === 0) await loadCorpus();
+      }, 2500);
+    })();
+  </script>
 </body>
+
 </html>
