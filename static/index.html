@@ -715,80 +715,536 @@
       font-size: 0.65rem;
     }
 
-    /* ─── PHASE 3: LLM (ATENCION) ─── */
+    /* ─── PHASE 3: LLM PREDICTION MACHINE ─── */
     #phase3 {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 1fr 280px;
     }
 
-    .llm-panel {
-      padding: 2.5rem;
+    .llm-main {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      overflow-y: auto;
+      overflow: hidden;
     }
 
-    .llm-header {
-      font-family: var(--font-disp);
-      font-size: 1.3rem;
-      font-weight: 800;
+    /* Generated Text Strip */
+    .llm-text-strip {
+      padding: 0.8rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11, 17, 32, 0.95);
+    }
+
+    .strip-label {
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
       color: var(--accent);
+      margin-bottom: 0.4rem;
     }
 
     .llm-text-area {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 2rem;
-      font-size: 1.4rem;
-      line-height: 2.2;
-      position: relative;
       display: flex;
       flex-wrap: wrap;
       align-content: flex-start;
-      gap: 0.6rem;
-      min-height: 200px;
+      gap: 0.4rem;
+      min-height: 40px;
+      padding: 0.4rem 0;
     }
 
     .llm-word {
       position: relative;
-      padding: 0.2rem 0.6rem;
-      background: rgba(124, 58, 237, 0.1);
+      padding: 0.25rem 0.6rem;
+      background: rgba(124, 58, 237, 0.12);
       border-radius: 6px;
       color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      animation: wordPop 0.4s ease both;
+      animation: wordMaterialize 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes wordMaterialize {
+      from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.5);
+        filter: blur(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
     }
 
     .llm-word.attending {
       color: #fff;
       background: var(--accent);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.7);
+      transform: scale(1.15);
       z-index: 10;
     }
 
-    .llm-controls {
-      display: flex;
-      gap: 1rem;
+    .llm-word.hallucinated {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px dashed var(--warn);
+      color: var(--warn);
+      animation: hallucinatePulse 2s infinite;
     }
 
-    .llm-explanation {
-      font-size: 0.85rem;
+    @keyframes hallucinatePulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0px rgba(245, 158, 11, 0);
+      }
+
+      50% {
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+      }
+    }
+
+    .llm-cursor {
+      display: inline-flex;
+      align-items: center;
+      color: var(--accent);
+      font-size: 1.1rem;
+      animation: cursorBlink 1s step-end infinite;
+    }
+
+    @keyframes cursorBlink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* Prediction Machine */
+    .prediction-machine {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem 1.2rem;
+      gap: 0.8rem;
+      overflow: hidden;
+    }
+
+    .machine-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .machine-header-title {
+      font-family: var(--font-disp);
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
       color: var(--muted);
-      line-height: 1.5;
+    }
+
+    .machine-step-indicator {
+      font-size: 0.6rem;
+      color: var(--accent);
+      padding: 0.15rem 0.5rem;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 100px;
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .machine-pipeline {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 20px 1fr 20px 1.5fr 20px 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .machine-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem;
+      opacity: 0.25;
+      transform: scale(0.96);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .machine-step.active {
+      opacity: 1;
+      transform: scale(1);
+      border-color: var(--accent);
+      box-shadow: 0 0 25px rgba(0, 212, 255, 0.08);
+    }
+
+    .machine-step.done {
+      opacity: 0.6;
+      transform: scale(0.98);
+      border-color: var(--green);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .machine-step.active .step-num {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+    }
+
+    .machine-step.done .step-num {
+      background: var(--green);
+      color: var(--bg);
+    }
+
+    .step-name {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .machine-step.active .step-name {
+      color: var(--accent);
+    }
+
+    .machine-step.done .step-name {
+      color: var(--green);
+    }
+
+    .step-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      justify-content: center;
+      align-items: center;
+      min-height: 60px;
+      overflow-y: auto;
+    }
+
+    .step-body::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .step-body::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
+
+    /* Step 1: Context */
+    .ctx-chip {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background: rgba(0, 212, 255, 0.12);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 4px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.78rem;
+      margin: 0.1rem;
+      animation: ctxScan 0.4s ease both;
+    }
+
+    @keyframes ctxScan {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .scan-beam {
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 2px;
+      margin-top: 0.4rem;
+      animation: scanMove 0.8s ease-in-out;
+    }
+
+    @keyframes scanMove {
+      from {
+        transform: translateX(-100%);
+      }
+
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    /* Step 2: Corpus Search */
+    .search-line {
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .search-line-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 2px;
+      width: 0%;
+      animation: searchFill 0.5s ease-out forwards;
+    }
+
+    @keyframes searchFill {
+      to {
+        width: 100%;
+      }
+    }
+
+    .search-result {
+      font-size: 0.62rem;
+      color: var(--green);
+      text-align: center;
+      animation: fadeSlide 0.3s ease both;
+      font-weight: 700;
+    }
+
+    /* Step 3: Candidates */
+    .cand-card {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      width: 100%;
+      animation: candFly 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      transition: all 0.4s;
+    }
+
+    @keyframes candFly {
+      from {
+        opacity: 0;
+        transform: translateX(25px) scale(0.85);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    .cand-card.winner {
+      border-color: var(--green);
+      background: rgba(16, 185, 129, 0.12);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.25);
+      transform: scale(1.06);
+    }
+
+    .cand-card.scanning {
+      border-color: var(--warn);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .cand-word {
+      font-weight: 700;
+      font-size: 0.72rem;
+      color: var(--text);
+      min-width: 50px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cand-bar-bg {
+      flex: 1;
+      height: 7px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .cand-bar-fg {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 4px;
+      width: 0%;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .cand-card.winner .cand-bar-fg {
+      background: linear-gradient(90deg, var(--green), #059669);
+    }
+
+    .cand-pct {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--warn);
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .cand-frac {
+      font-size: 0.55rem;
+      color: var(--muted);
+      min-width: 30px;
+      text-align: center;
+    }
+
+    /* Step 4: Selection */
+    .chosen-reveal {
+      padding: 0.4rem 0.8rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid var(--green);
+      border-radius: 8px;
+      color: var(--green);
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-align: center;
+      animation: chosenPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes chosenPop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.3);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .chosen-method {
+      font-size: 0.55rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 0.2rem 0.4rem;
+      background: var(--bg);
+      border-radius: 4px;
+      margin-top: 0.2rem;
+      line-height: 1.4;
+    }
+
+    .halluc-alert {
+      padding: 0.5rem;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px dashed var(--warn);
+      border-radius: 6px;
+      text-align: center;
+      color: var(--warn);
+      font-size: 0.65rem;
+      font-weight: 700;
+      animation: hallucinatePulse 1.5s infinite;
+    }
+
+    /* Pipeline Arrows */
+    .pipe-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--border);
+      font-size: 1rem;
+      transition: color 0.3s;
+      flex-shrink: 0;
+    }
+
+    .pipe-arrow.active {
+      color: var(--accent);
+      animation: arrowPulse 0.7s ease infinite;
+    }
+
+    @keyframes arrowPulse {
+
+      0%,
+      100% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .pipe-arrow.done {
+      color: var(--green);
+    }
+
+    /* LLM Bottom Controls */
+    .llm-bottom-controls {
+      padding: 0.6rem 1.2rem;
+      border-top: 1px solid var(--border);
+      background: rgba(11, 17, 32, 0.95);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .machine-idle {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    /* Right Log Panel */
+    .llm-log-panel {
+      border-left: 1px solid var(--border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      overflow-y: auto;
+    }
+
+    .llm-log-panel::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .llm-log-panel::-webkit-scrollbar-thumb {
+      background: var(--border);
     }
 
     .context-log {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.4rem;
       overflow-y: auto;
-      max-height: 350px;
-      padding-right: 4px;
     }
 
     .context-log::-webkit-scrollbar {
@@ -800,8 +1256,8 @@
       border: 1px solid var(--border);
       border-left: 3px solid var(--accent);
       border-radius: 4px;
-      padding: 0.8rem;
-      font-size: 0.72rem;
+      padding: 0.6rem;
+      font-size: 0.65rem;
       animation: fadeSlide 0.3s ease both;
       line-height: 1.5;
     }
@@ -1096,42 +1552,102 @@
         </div>
       </div>
 
-      <!-- PHASE 3: LLM -->
+      <!-- PHASE 3: LLM PREDICTION MACHINE -->
       <div class="phase" id="phase3">
-        <div class="llm-panel">
-          <div class="llm-header">Generación con Contexto Profundo (Estilo LLM)</div>
-          <div class="llm-explanation">
-            A diferencia de los bigramas que solo tienen "1 memoria", este modelo dinámico usa <strong>todo el contexto
-              posible</strong> hacia atrás para calcular probabilidades. Esto simula el mecanismo de <em>Atención</em>
-            donde la IA lee las palabras anteriores para darle mucha más coherencia lógica a la siguiente decisión o
-            palabra.
+        <div class="llm-main">
+          <!-- Generated Text Strip -->
+          <div class="llm-text-strip">
+            <div class="strip-label">🖨️ Texto Generándose en Vivo</div>
+            <div class="llm-text-area" id="llmTextArea">
+              <span class="llm-cursor" id="llmCursor">▊</span>
+            </div>
           </div>
-          <div class="llm-text-area" id="llmTextArea"></div>
-          <div class="llm-controls" style="align-items:center;">
-            <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:180px" />
 
+          <!-- The Prediction Machine -->
+          <div class="prediction-machine">
+            <div class="machine-header">
+              <span class="machine-header-title">⚙️ La Máquina de Predicción</span>
+              <span class="machine-step-indicator" id="machineIndicator">Esperando...</span>
+            </div>
+
+            <div class="machine-pipeline" id="machinePipeline">
+              <!-- Step 1: Context -->
+              <div class="machine-step" id="mStep1">
+                <div class="step-header">
+                  <span class="step-num">1</span>
+                  <span class="step-name">CONTEXTO</span>
+                </div>
+                <div class="step-body" id="mStep1Body">
+                  <span style="color:var(--muted);font-size:0.6rem">Leyendo memoria...</span>
+                </div>
+              </div>
+
+              <div class="pipe-arrow" id="pArrow1">→</div>
+
+              <!-- Step 2: Search -->
+              <div class="machine-step" id="mStep2">
+                <div class="step-header">
+                  <span class="step-num">2</span>
+                  <span class="step-name">BUSCAR</span>
+                </div>
+                <div class="step-body" id="mStep2Body">
+                  <span style="color:var(--muted);font-size:0.6rem">Escaneando corpus...</span>
+                </div>
+              </div>
+
+              <div class="pipe-arrow" id="pArrow2">→</div>
+
+              <!-- Step 3: Candidates -->
+              <div class="machine-step" id="mStep3">
+                <div class="step-header">
+                  <span class="step-num">3</span>
+                  <span class="step-name">CANDIDATOS</span>
+                </div>
+                <div class="step-body" id="mStep3Body">
+                  <span style="color:var(--muted);font-size:0.6rem">Calculando probabilidades...</span>
+                </div>
+              </div>
+
+              <div class="pipe-arrow" id="pArrow3">→</div>
+
+              <!-- Step 4: Selection -->
+              <div class="machine-step" id="mStep4">
+                <div class="step-header">
+                  <span class="step-num">4</span>
+                  <span class="step-name">ELEGIR</span>
+                </div>
+                <div class="step-body" id="mStep4Body">
+                  <span style="color:var(--muted);font-size:0.6rem">Seleccionando...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Controls -->
+          <div class="llm-bottom-controls">
+            <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:160px" />
             <div
-              style="display:flex; flex-direction:column; justify-content:center; flex:1; margin: 0 1rem; color:var(--muted); font-size:0.65rem; font-family:var(--font-mono);">
-              <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
-                <span style="color:var(--green)" title="Contexto gigante">Memoria estricta</span>
+              style="display:flex; flex-direction:column; flex:1; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
+                <span style="color:var(--green)">Memoria estricta</span>
                 <span style="color:var(--text); font-weight:bold;">Temperatura</span>
-                <span style="color:var(--warn)" title="Contexto mínimo (Alucinación)">Creatividad</span>
+                <span style="color:var(--warn)">Creatividad</span>
               </div>
               <input type="range" id="llmTempSlider" min="0" max="100" value="0"
                 style="accent-color:var(--purple); cursor:pointer;">
             </div>
-
             <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
           </div>
         </div>
-        <div class="predict-panel">
-          <div class="side-title">Análisis de Atención Artificial</div>
+
+        <!-- Right Log Panel -->
+        <div class="llm-log-panel">
+          <div class="side-title">📋 Historial de Decisiones</div>
           <div class="context-log" id="llmContextLog"></div>
           <div class="math-box">
             <strong>Matemática Contextual</strong>
             <span class="eq">P(w<sub>t</sub> | w<sub>t-1</sub>, w<sub>t-2</sub>, ...)</span>
-            El sistema rastreó tu corpus buscando las palabras que recientemente se iluminaron como bloque de contexto
-            completo para deducir estadísticamente qué debería seguir exactamente.
+            Cada paso muestra cómo la IA busca en el corpus las fracciones exactas que determinan la siguiente palabra.
           </div>
         </div>
       </div>
@@ -1835,9 +2351,38 @@
     });
 
     // ════════════════════════════════════════════════════════
-    //  PHASE 3 — LLM CONTEXTUAL PREDICTION
+    //  PHASE 3 — LLM PREDICTION MACHINE (IMMERSIVE)
     // ════════════════════════════════════════════════════════
     let llmRunning = false;
+
+    // Machine step management
+    function resetMachine() {
+      for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`mStep${i}`);
+        step.classList.remove('active', 'done');
+        document.getElementById(`mStep${i}Body`).innerHTML = '<span style="color:var(--muted);font-size:0.6rem">...</span>';
+      }
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById(`pArrow${i}`).classList.remove('active', 'done');
+      }
+      document.getElementById('machineIndicator').textContent = 'Esperando...';
+    }
+
+    function activateStep(n, label) {
+      // Mark previous as done
+      for (let i = 1; i < n; i++) {
+        document.getElementById(`mStep${i}`).classList.remove('active');
+        document.getElementById(`mStep${i}`).classList.add('done');
+        if (i <= 3) document.getElementById(`pArrow${i}`).classList.remove('active');
+        if (i <= 3) document.getElementById(`pArrow${i}`).classList.add('done');
+      }
+      // Activate current
+      const step = document.getElementById(`mStep${n}`);
+      step.classList.remove('done');
+      step.classList.add('active');
+      if (n > 1) document.getElementById(`pArrow${n - 1}`).classList.add('active');
+      document.getElementById('machineIndicator').textContent = label;
+    }
 
     async function startLLMPrediction() {
       if (llmRunning) return;
@@ -1851,25 +2396,27 @@
 
       llmRunning = true;
       document.getElementById('llmPredictBtn').disabled = true;
-      document.getElementById('llmTextArea').innerHTML = '';
+
+      // Reset areas
+      const textArea = document.getElementById('llmTextArea');
+      textArea.innerHTML = '<span class="llm-cursor" id="llmCursor">▊</span>';
       document.getElementById('llmContextLog').innerHTML = '';
+      resetMachine();
 
       let generated = [seed];
       appendLLMWord(seed);
 
       for (let step = 0; step < 15; step++) {
-        await delay(800);
+        await delay(500);
+        resetMachine();
 
         let attempt = null;
-
-        // ---- TEMPERATURE & OVERFITTING LOGIC ----
         const tempValue = parseInt(document.getElementById('llmTempSlider').value);
         let maxAllowedContext = generated.length;
 
-        // Limit the window based on temperature to break memorization
-        if (tempValue > 70) maxAllowedContext = 1;      // Contexto de 1 palabra previa
-        else if (tempValue > 30) maxAllowedContext = 2; // Contexto de 2 palabras previas
-        else maxAllowedContext = generated.length;      // Todo el contexto (Memorización)
+        if (tempValue > 70) maxAllowedContext = 1;
+        else if (tempValue > 30) maxAllowedContext = 2;
+        else maxAllowedContext = generated.length;
 
         const maxN = Math.min(generated.length + 1, maxAllowedContext + 1);
 
@@ -1884,11 +2431,9 @@
           }
         }
 
-        // --- NEW LINE JUMP (DEAD-END FALLBACK) ---
         if (!attempt) {
-          // If we hit a total dead end, the model "hallucinates" by picking a completely
-          // random word from the global vocabulary, breaking the loop artificially instead of freezing.
-          let nexts = getNextsForContext(['[Punto y aparte]']);
+          const lastWord = generated[generated.length - 1];
+          let nexts = getNextsForContext(['[Punto y aparte]'], lastWord);
           if (Object.keys(nexts).length > 0) {
             attempt = { nexts, ctxWords: ['[Salto creativo]'], n: 1 };
           }
@@ -1896,18 +2441,105 @@
 
         if (!attempt) break;
 
-        // Highlight attending words (ignore if it's a creative jump)
-        if (attempt.ctxWords[0] !== '[Salto creativo]') {
+        const isCreative = attempt.ctxWords[0] === '[Salto creativo]';
+        const total = Object.values(attempt.nexts).reduce((a, b) => a + b, 0);
+        const sorted = Object.entries(attempt.nexts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+        // ═════ STEP 1: READ CONTEXT ═════
+        activateStep(1, 'Paso 1: Leyendo contexto...');
+        const s1Body = document.getElementById('mStep1Body');
+        s1Body.innerHTML = '';
+
+        if (isCreative) {
+          s1Body.innerHTML = '<div class="halluc-alert">⚠️ Sin contexto<br>¡Callejón sin salida!</div>';
+        } else {
+          // Highlight attending words in text strip
           highlightAttendingWords(attempt.ctxWords.length);
+          // Show context chips one by one
+          for (let ci = 0; ci < attempt.ctxWords.length; ci++) {
+            const chip = document.createElement('span');
+            chip.className = 'ctx-chip';
+            chip.style.animationDelay = `${ci * 0.15}s`;
+            chip.textContent = attempt.ctxWords[ci];
+            s1Body.appendChild(chip);
+            await delay(200);
+          }
+          // Scanner beam
+          const beam = document.createElement('div');
+          beam.className = 'scan-beam';
+          s1Body.appendChild(beam);
         }
+        await delay(800);
+
+        // ═════ STEP 2: SEARCH CORPUS ═════
+        activateStep(2, 'Paso 2: Buscando en corpus...');
+        const s2Body = document.getElementById('mStep2Body');
+        s2Body.innerHTML = '';
+
+        if (isCreative) {
+          s2Body.innerHTML = '<div class="halluc-alert">🎲 Buscando en TODO<br>el diccionario...</div>';
+          await delay(600);
+        } else {
+          // Animated search lines
+          const numLines = 8;
+          for (let li = 0; li < numLines; li++) {
+            const line = document.createElement('div');
+            line.className = 'search-line';
+            line.style.animationDelay = `${li * 0.06}s`;
+            line.innerHTML = '<div class="search-line-fill" style="animation-delay:' + (li * 0.06) + 's"></div>';
+            s2Body.appendChild(line);
+            await delay(60);
+          }
+          await delay(500);
+
+          // Result
+          const res = document.createElement('div');
+          res.className = 'search-result';
+          res.textContent = `✓ ${sorted.length} candidatos (${total} coincidencias)`;
+          s2Body.appendChild(res);
+        }
+        await delay(600);
+
+        // ═════ STEP 3: SHOW CANDIDATES (RACING BARS) ═════
+        activateStep(3, 'Paso 3: Calculando probabilidades...');
+        const s3Body = document.getElementById('mStep3Body');
+        s3Body.innerHTML = '';
+
+        // Create candidate cards one by one
+        const cardElements = [];
+        for (let ci = 0; ci < sorted.length; ci++) {
+          const [word, cnt] = sorted[ci];
+          const pct = ((cnt / total) * 100).toFixed(0);
+
+          const card = document.createElement('div');
+          card.className = 'cand-card';
+          card.style.animationDelay = `${ci * 0.1}s`;
+          card.dataset.word = word;
+          card.innerHTML = `
+            <span class="cand-word">${word}</span>
+            <span class="cand-frac">${cnt}/${total}</span>
+            <div class="cand-bar-bg"><div class="cand-bar-fg" data-pct="${pct}"></div></div>
+            <span class="cand-pct">${pct}%</span>
+          `;
+          s3Body.appendChild(card);
+          cardElements.push(card);
+          await delay(120);
+        }
+
+        // Animate bars growing (race!)
+        await delay(50);
+        s3Body.querySelectorAll('.cand-bar-fg').forEach(bar => {
+          bar.style.width = bar.dataset.pct + '%';
+        });
         await delay(1200);
 
-        // --- TEMPERATURE BASED SELECTION ---
-        let chosen;
-        const total = Object.values(attempt.nexts).reduce((a, b) => a + b, 0);
+        // ═════ STEP 4: SELECTION ═════
+        activateStep(4, 'Paso 4: Eligiendo palabra...');
+        const s4Body = document.getElementById('mStep4Body');
+        s4Body.innerHTML = '';
 
+        let chosen;
         if (tempValue === 0) {
-          // T=0 (Greedy): Always pick the most mathematically probable token
           let bestWord = null;
           let maxCount = -1;
           for (const [w, c] of Object.entries(attempt.nexts)) {
@@ -1915,39 +2547,92 @@
           }
           chosen = bestWord;
         } else {
-          // T>0 (Stochastic): Pick randomly based on weighted probability
           chosen = weightedChoose(attempt.nexts);
         }
 
+        if (!isCreative) {
+          // Visual scanner roulette: rapidly highlight candidates
+          const scanRounds = 8 + Math.floor(Math.random() * 6);
+          for (let si = 0; si < scanRounds; si++) {
+            const idx = si % cardElements.length;
+            cardElements.forEach(c => c.classList.remove('scanning'));
+            cardElements[idx].classList.add('scanning');
+            const spd = 60 + si * 18; // slows down
+            await delay(spd);
+          }
+          cardElements.forEach(c => c.classList.remove('scanning'));
+
+          // Highlight winner
+          const winnerCard = cardElements.find(c => c.dataset.word === chosen);
+          if (winnerCard) winnerCard.classList.add('winner');
+          await delay(400);
+        }
+
+        // Show chosen word BIG
+        const rev = document.createElement('div');
+        rev.className = 'chosen-reveal';
+        rev.textContent = chosen;
+        s4Body.appendChild(rev);
+
+        // Show method
+        const meth = document.createElement('div');
+        meth.className = 'chosen-method';
+        if (isCreative) {
+          meth.innerHTML = '⚠️ ALUCINACIÓN<br>Palabra tomada al azar del diccionario';
+          meth.style.color = 'var(--warn)';
+        } else if (tempValue === 0) {
+          meth.innerHTML = '🎯 GREEDY (T=0)<br>Se eligió la probabilidad más alta';
+        } else {
+          meth.innerHTML = '🎲 ESTOCÁSTICO (T>0)<br>Dados ponderados por probabilidad';
+        }
+        s4Body.appendChild(meth);
+
+        await delay(600);
+
+        // Mark all done
+        for (let i = 1; i <= 4; i++) {
+          document.getElementById(`mStep${i}`).classList.remove('active');
+          document.getElementById(`mStep${i}`).classList.add('done');
+        }
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`pArrow${i}`).classList.remove('active');
+          document.getElementById(`pArrow${i}`).classList.add('done');
+        }
+        document.getElementById('machineIndicator').textContent = `✓ Palabra #${step + 2} generada`;
+
+        // Log to right panel
         const count = attempt.nexts[chosen];
         const prob = (count / total * 100).toFixed(0);
-
-        // Log
         addLLMLog(attempt.ctxWords, chosen, count, total, prob, attempt.nexts, tempValue);
 
-        // Append word
-        appendLLMWord(chosen);
+        // Append word to generated text
+        unhighlightWords();
+        appendLLMWord(chosen, isCreative);
         generated.push(chosen);
 
-        unhighlightWords();
-        await delay(200);
+        await delay(400);
       }
 
+      // Done
+      document.getElementById('machineIndicator').textContent = '✓ Generación completa';
       llmRunning = false;
       document.getElementById('llmPredictBtn').disabled = false;
     }
 
-    function getNextsForContext(ctxWords) {
+    function getNextsForContext(ctxWords, lastWord) {
       let nexts = {};
 
       if (ctxWords.length === 1 && ctxWords[0] === '[Punto y aparte]') {
-        // Build a global vocabulary frequency map to sample from
+        // Only pick words that have a SUCCESSOR (non-terminal words)
+        // This prevents picking dead-end words like "mundo" that cause infinite hallucination
         corpusCache.forEach(p => {
           let pWords = tokenize(p);
-          pWords.forEach(w => {
-            nexts[w] = (nexts[w] || 0) + 1;
-          });
+          for (let i = 0; i < pWords.length - 1; i++) { // -1: exclude last word (dead ends)
+            nexts[pWords[i]] = (nexts[pWords[i]] || 0) + 1;
+          }
         });
+        // Remove the last generated word to prevent stuttering
+        if (lastWord && nexts[lastWord]) delete nexts[lastWord];
         return nexts;
       }
 
@@ -1968,28 +2653,45 @@
       return nexts;
     }
 
-    function appendLLMWord(word) {
+    function appendLLMWord(word, isCreative = false) {
       const area = document.getElementById('llmTextArea');
+      // Remove cursor, add word, re-add cursor
+      const cursor = document.getElementById('llmCursor');
+      if (cursor) cursor.remove();
+
       const div = document.createElement('div');
-      div.className = 'llm-word';
+      div.className = 'llm-word' + (isCreative ? ' hallucinated' : '');
+      if (isCreative) div.title = 'Salto Creativo (Alucinación)';
       div.textContent = word;
       area.appendChild(div);
+
+      // Re-add cursor
+      const newCursor = document.createElement('span');
+      newCursor.className = 'llm-cursor';
+      newCursor.id = 'llmCursor';
+      newCursor.textContent = '▊';
+      area.appendChild(newCursor);
     }
 
     function highlightAttendingWords(numWords) {
       const children = document.getElementById('llmTextArea').children;
       for (let i = 0; i < children.length; i++) {
-        if (i >= children.length - numWords) {
-          children[i].classList.add('attending');
-        }
+        const el = children[i];
+        if (el.classList.contains('llm-cursor')) continue;
+        // Count backwards from last llm-word
+        const words = [...document.getElementById('llmTextArea').querySelectorAll('.llm-word')];
+        const start = Math.max(0, words.length - numWords);
+        words.forEach((w, wi) => {
+          if (wi >= start) w.classList.add('attending');
+        });
+        return;
       }
     }
 
     function unhighlightWords() {
-      const children = document.getElementById('llmTextArea').children;
-      for (let i = 0; i < children.length; i++) {
-        children[i].classList.remove('attending');
-      }
+      document.querySelectorAll('#llmTextArea .llm-word').forEach(w => {
+        w.classList.remove('attending');
+      });
     }
 
     function addLLMLog(ctxWords, chosen, count, total, prob, nexts, tempValue) {
@@ -1997,34 +2699,34 @@
       const entry = document.createElement('div');
       entry.className = 'context-entry';
 
-      let candidateListHTML = `<div style="margin-top:0.5rem; padding-left:0.5rem; border-left:2px solid var(--border)"><strong>Opciones matemáticas calculadas:</strong><br>`;
-      const sortedNexts = Object.entries(nexts).sort((a, b) => b[1] - a[1]);
-      for (let i = 0; i < sortedNexts.length; i++) {
-        let nWord = sortedNexts[i][0];
-        let nCount = sortedNexts[i][1];
-        let nProb = ((nCount / total) * 100).toFixed(0);
-        let color = nWord === chosen ? 'color:var(--green)' : 'color:var(--muted)';
+      const isCreative = ctxWords[0] === '[Salto creativo]';
 
-        candidateListHTML += `<span style="${color}">• ${nWord} (${nCount}/${total}) → ${nProb}%</span><br>`;
-        if (i >= 3 && nWord !== chosen && sortedNexts.length > 5) {
-          candidateListHTML += `<span style="color:var(--muted)">... y más opciones ocultas</span><br>`;
-          break;
-        }
-      }
-      candidateListHTML += `</div>`;
-
-      let tempText = tempValue === 0
-        ? '<span style="color:var(--warn);font-size:0.6rem;">[Temp=0] Elegida por ser la probabilidad más alta (Matemática Pura).</span>'
-        : '<span style="color:var(--purple);font-size:0.6rem;">[Temp>0] Tirada de dados ponderada (Alucinación Estocástica).</span>';
-
-      entry.innerHTML = `
-           Foco de Atención puesto en: <span class="context-words">"${ctxWords.join(' ')}"</span><br>
-           Próximo Token Generado: <span class="context-new">"${chosen}"</span><br>
-           ${candidateListHTML}
-           <div style="margin-top:0.5rem;">
-             ${tempText}
-           </div>
+      if (isCreative) {
+        entry.style.borderColor = 'var(--warn)';
+        entry.style.background = 'rgba(245, 158, 11, 0.05)';
+        entry.innerHTML = `
+          <div style="color:var(--warn);font-weight:bold;">⚠️ ALUCINACIÓN</div>
+          <span style="font-size:0.58rem;color:var(--muted)">Sin contexto válido → palabra al azar del diccionario</span><br>
+          Token: <span class="context-new" style="color:var(--warn)">"${chosen}"</span>
         `;
+      } else {
+        const sortedNexts = Object.entries(nexts).sort((a, b) => b[1] - a[1]);
+        let candHTML = '';
+        for (let i = 0; i < Math.min(sortedNexts.length, 4); i++) {
+          const [nW, nC] = sortedNexts[i];
+          const nP = ((nC / total) * 100).toFixed(0);
+          const col = nW === chosen ? 'color:var(--green)' : 'color:var(--muted)';
+          candHTML += `<span style="${col}">• ${nW} ${nC}/${total}=${nP}%</span><br>`;
+        }
+        if (sortedNexts.length > 4) candHTML += `<span style="color:var(--muted)">+${sortedNexts.length - 4} más</span>`;
+
+        const tLabel = tempValue === 0 ? '🎯 Greedy' : '🎲 Estocástico';
+        entry.innerHTML = `
+          Contexto: <span class="context-words">"${ctxWords.join(' ')}"</span><br>
+          Elegida: <span class="context-new">"${chosen}"</span> · <span style="color:var(--warn)">${prob}%</span> · ${tLabel}<br>
+          <div style="margin-top:0.3rem;padding-left:0.4rem;border-left:2px solid var(--border);font-size:0.58rem">${candHTML}</div>
+        `;
+      }
       log.prepend(entry);
     }
 
