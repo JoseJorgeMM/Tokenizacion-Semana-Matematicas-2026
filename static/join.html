@@ -1,655 +1,778 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Entrena la IA · Taller Matemáticas</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #060a0f;
-    --surface: #0d1520;
-    --border: #1a2840;
-    --accent: #00d4ff;
-    --green: #10b981;
-    --purple: #7c3aed;
-    --warn: #f59e0b;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --dim: #1e3a5f;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow-x: hidden;
-  }
-
-  /* Animated background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 20% 20%, rgba(0,212,255,0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 480px;
-    padding: 2rem 1.2rem 3rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.4rem;
-  }
-
-  /* HEADER */
-  .header { text-align: center; padding-top: 1rem; }
-
-  .brain-icon {
-    font-size: 3.5rem;
-    display: block;
-    margin-bottom: 0.8rem;
-    animation: breathe 3s ease-in-out infinite;
-  }
-
-  @keyframes breathe {
-    0%,100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(0,212,255,0.4)); }
-    50%      { transform: scale(1.08); filter: drop-shadow(0 0 20px rgba(0,212,255,0.8)); }
-  }
-
-  h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--accent), var(--purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.4rem;
-  }
-
-  .subtitle {
-    font-size: 0.75rem;
-    color: var(--muted);
-    line-height: 1.6;
-    letter-spacing: 0.02em;
-  }
-
-  /* LIVE STATS BAR */
-  .stats-bar {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-  }
-
-  .stat-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.9rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    font-size: 0.72rem;
-    color: var(--muted);
-    transition: all 0.3s;
-  }
-
-  .stat-pill .num {
-    color: var(--accent);
-    font-weight: 700;
-    font-size: 0.85rem;
-    transition: transform 0.3s;
-  }
-
-  .stat-pill.bump .num { animation: bump 0.4s ease; }
-
-  @keyframes bump {
-    0%   { transform: scale(1); }
-    40%  { transform: scale(1.4); color: #fff; }
-    100% { transform: scale(1); }
-  }
-
-  /* LIVE DOT */
-  .live-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 1.5s ease-in-out infinite;
-    flex-shrink: 0;
-  }
-
-  @keyframes pulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  /* FORM */
-  .form-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.2rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s;
-  }
-
-  .form-card:focus-within {
-    border-color: rgba(0,212,255,0.5);
-    box-shadow: 0 0 0 1px rgba(0,212,255,0.1);
-  }
-
-  .form-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--purple));
-  }
-
-  .form-label {
-    font-size: 0.62rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 0.8rem;
-    display: block;
-  }
-
-  textarea {
-    width: 100%;
-    min-height: 110px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    padding: 0.9rem;
-    resize: none;
-    outline: none;
-    transition: border-color 0.2s;
-    -webkit-appearance: none;
-  }
-
-  textarea:focus { border-color: var(--accent); }
-  textarea::placeholder { color: var(--dim); }
-
-  .form-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0.6rem;
-  }
-
-  .char-count {
-    font-size: 0.65rem;
-    color: var(--muted);
-    transition: color 0.3s;
-  }
-  .char-count.warn { color: var(--warn); }
-
-  .submit-btn {
-    width: 100%;
-    margin-top: 0.9rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, var(--accent), #0099cc);
-    border: none;
-    border-radius: 8px;
-    color: var(--bg);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-  }
-
-  .submit-btn:active { transform: scale(0.97); filter: brightness(0.9); }
-  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  .submit-btn .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(0,0,0,0.3);
-    border-top-color: #000;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none;
-  }
-
-  .submit-btn.loading .spinner { display: block; }
-  .submit-btn.loading .btn-text { display: none; }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* SUCCESS STATE */
-  .success-card {
-    background: var(--surface);
-    border: 1px solid rgba(16,185,129,0.4);
-    border-radius: 12px;
-    padding: 2rem 1.2rem;
-    text-align: center;
-    display: none;
-    animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1);
-  }
-
-  .success-card.visible { display: block; }
-
-  @keyframes popIn {
-    from { opacity:0; transform: scale(0.85) translateY(10px); }
-    to   { opacity:1; transform: scale(1) translateY(0); }
-  }
-
-  .success-icon {
-    font-size: 3rem;
-    display: block;
-    margin-bottom: 0.8rem;
-    animation: successPop 0.5s cubic-bezier(0.16,1,0.3,1);
-  }
-
-  @keyframes successPop {
-    0%   { transform: scale(0); }
-    60%  { transform: scale(1.3); }
-    100% { transform: scale(1); }
-  }
-
-  .success-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: var(--green);
-    margin-bottom: 0.5rem;
-  }
-
-  .success-phrase {
-    font-size: 0.78rem;
-    color: var(--muted);
-    line-height: 1.6;
-    padding: 0.6rem 1rem;
-    background: var(--bg);
-    border-radius: 6px;
-    border-left: 3px solid var(--green);
-    margin: 0.8rem 0;
-    text-align: left;
-    font-style: italic;
-  }
-
-  .token-preview {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    justify-content: center;
-    margin: 0.8rem 0;
-  }
-
-  .token-chip {
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    animation: tokenPop 0.3s ease both;
-  }
-
-  @keyframes tokenPop {
-    from { opacity:0; transform: scale(0.6) translateY(6px); }
-    to   { opacity:1; transform: scale(1) translateY(0); }
-  }
-
-  .tc0 { background: rgba(0,212,255,0.15); color:#00d4ff; border:1px solid rgba(0,212,255,0.3); }
-  .tc1 { background: rgba(124,58,237,0.15); color:#a78bfa; border:1px solid rgba(124,58,237,0.3); }
-  .tc2 { background: rgba(16,185,129,0.15); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); }
-  .tc3 { background: rgba(245,158,11,0.15); color:#fcd34d; border:1px solid rgba(245,158,11,0.3); }
-
-  .add-another-btn {
-    margin-top: 1rem;
-    padding: 0.8rem 1.5rem;
-    background: transparent;
-    border: 1px solid var(--green);
-    border-radius: 8px;
-    color: var(--green);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    width: 100%;
-    transition: all 0.2s;
-  }
-  .add-another-btn:active { background: rgba(16,185,129,0.1); }
-
-  /* ERROR */
-  .error-msg {
-    font-size: 0.75rem;
-    color: #ef4444;
-    margin-top: 0.5rem;
-    min-height: 1rem;
-    display: none;
-  }
-  .error-msg.visible { display: block; }
-
-  /* EXAMPLES */
-  .examples-section { }
-
-  .examples-title {
-    font-size: 0.62rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.7rem;
-  }
-
-  .example-chips {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .example-chip {
-    padding: 0.7rem 0.9rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.75rem;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    line-height: 1.4;
-    text-align: left;
-  }
-
-  .example-chip::before {
-    content: '→ ';
-    color: var(--accent);
-    font-weight: 700;
-  }
-
-  .example-chip:active {
-    background: rgba(0,212,255,0.08);
-    border-color: var(--accent);
-    color: var(--text);
-    transform: scale(0.98);
-  }
-
-  /* CONFETTI CANVAS */
-  #confettiCanvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 999;
-  }
-</style>
-</head>
-<body>
-
-<canvas id="confettiCanvas"></canvas>
-
-<div class="container">
-
-  <!-- HEADER -->
-  <div class="header">
-    <span class="brain-icon">🧠</span>
-    <h1>Entrena la IA</h1>
-    <p class="subtitle">Escribe una frase sobre matemáticas<br>y ayuda a construir el modelo en vivo</p>
-  </div>
-
-  <!-- LIVE STATS -->
-  <div class="stats-bar">
-    <div class="stat-pill" id="statPhrases">
-      <div class="live-dot"></div>
-      <span class="num" id="numPhrases">0</span> frases
-    </div>
-    <div class="stat-pill" id="statWords">
-      <span class="num" id="numWords">0</span> palabras
-    </div>
-    <div class="stat-pill" id="statVocab">
-      <span class="num" id="numVocab">0</span> vocab
-    </div>
-  </div>
-
-  <!-- FORM -->
-  <div class="form-card" id="formCard">
-    <span class="form-label">Tu aporte al corpus</span>
-    <textarea
-      id="phraseInput"
-      maxlength="200"
-      placeholder="Ej: La suma de los ángulos interiores de un triángulo es ciento ochenta grados..."
-    ></textarea>
-    <div class="form-footer">
-      <span class="char-count" id="charCount">0 / 200</span>
-      <span style="font-size:0.65rem;color:var(--muted)">mín. 3 palabras</span>
-    </div>
-    <div class="error-msg" id="errorMsg"></div>
-    <button class="submit-btn" id="submitBtn" onclick="submitPhrase()">
-      <span class="btn-text">Agregar al modelo →</span>
-      <div class="spinner"></div>
-    </button>
-  </div>
-
-  <!-- SUCCESS STATE -->
-  <div class="success-card" id="successCard">
-    <span class="success-icon">✦</span>
-    <div class="success-title">¡Frase agregada!</div>
-    <div class="success-phrase" id="successPhrase"></div>
-    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem">Tokenizada en:</div>
-    <div class="token-preview" id="tokenPreview"></div>
-    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.5">
-      Estos tokens ahora forman parte<br>del modelo de probabilidades
-    </div>
-    <button class="add-another-btn" onclick="addAnother()">+ Agregar otra frase</button>
-  </div>
-
-  <!-- EXAMPLES -->
-  <div class="examples-section">
-    <div class="examples-title">💡 Inspiración para tus frases</div>
-    <div class="example-chips">
-      <div class="example-chip" onclick="useExample(this)">La derivada mide la tasa de cambio de una función</div>
-      <div class="example-chip" onclick="useExample(this)">La probabilidad es un número entre cero y uno</div>
-      <div class="example-chip" onclick="useExample(this)">El teorema de Pitágoras relaciona los lados del triángulo rectángulo</div>
-      <div class="example-chip" onclick="useExample(this)">Una función lineal tiene pendiente constante en toda su longitud</div>
-      <div class="example-chip" onclick="useExample(this)">Los números primos son divisibles únicamente por uno y por sí mismos</div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-const API = "";
-let pollInterval;
-
-// ── CHAR COUNT ────────────────────────────────────
-document.getElementById('phraseInput').addEventListener('input', function() {
-  const len = this.value.length;
-  const cc = document.getElementById('charCount');
-  cc.textContent = `${len} / 200`;
-  cc.classList.toggle('warn', len > 170);
-  hideError();
-});
-
-document.getElementById('phraseInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPhrase(); }
-});
-
-// ── SUBMIT ────────────────────────────────────────
-async function submitPhrase() {
-  const input  = document.getElementById('phraseInput');
-  const phrase = input.value.trim();
-  const btn    = document.getElementById('submitBtn');
-
-  if (!phrase) return showError('Escribe una frase primero');
-  const words = phrase.trim().split(/\s+/).filter(Boolean);
-  if (words.length < 3) return showError('La frase debe tener al menos 3 palabras');
-
-  btn.classList.add('loading');
-  btn.disabled = true;
-  hideError();
-
-  try {
-    const res = await fetch(`${API}/api/corpus/add`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phrase }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Error al agregar');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Entrena la IA · Detrás de Gemini y ChatGPT hay fracciones y probabilidades</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060a0f;
+      --surface: #0d1520;
+      --border: #1a2840;
+      --accent: #00d4ff;
+      --green: #10b981;
+      --purple: #7c3aed;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --dim: #1e3a5f;
     }
 
-    showSuccess(phrase);
-    input.value = '';
-    document.getElementById('charCount').textContent = '0 / 200';
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  } catch(e) {
-    showError(e.message);
-  } finally {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-  }
-}
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
 
-// ── SUCCESS ───────────────────────────────────────
-function showSuccess(phrase) {
-  document.getElementById('formCard').style.display = 'none';
-  const card = document.getElementById('successCard');
-  card.classList.add('visible');
-  document.getElementById('successPhrase').textContent = `"${phrase}"`;
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(0, 212, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(124, 58, 237, 0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
 
-  // Tokenize locally for display
-  const tokens = phrase.toLowerCase().replace(/[.,;:!?()""'']/g,'').split(/\s+/).filter(Boolean);
-  const colors = ['tc0','tc1','tc2','tc3'];
-  const preview = document.getElementById('tokenPreview');
-  preview.innerHTML = '';
-  tokens.forEach((t, i) => {
-    setTimeout(() => {
-      const chip = document.createElement('span');
-      chip.className = `token-chip ${colors[i % 4]}`;
-      chip.style.animationDelay = `${i * 0.06}s`;
-      chip.textContent = t;
-      preview.appendChild(chip);
-    }, i * 80);
-  });
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem 1.2rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+    }
 
-  launchConfetti();
-  loadStats();
-}
+    /* HEADER */
+    .header {
+      text-align: center;
+      padding-top: 1rem;
+    }
 
-function addAnother() {
-  document.getElementById('successCard').classList.remove('visible');
-  document.getElementById('formCard').style.display = 'block';
-  document.getElementById('phraseInput').focus();
-}
+    .brain-icon {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 0.8rem;
+      animation: breathe 3s ease-in-out infinite;
+    }
 
-// ── EXAMPLES ──────────────────────────────────────
-function useExample(el) {
-  const input = document.getElementById('phraseInput');
-  input.value = el.textContent.replace(/^→ /, '');
-  document.getElementById('charCount').textContent = `${input.value.length} / 200`;
-  input.focus();
-  hideError();
-}
+    @keyframes breathe {
 
-// ── ERROR ─────────────────────────────────────────
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.classList.add('visible');
-}
-function hideError() {
-  document.getElementById('errorMsg').classList.remove('visible');
-}
+      0%,
+      100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
+      }
 
-// ── STATS POLLING ─────────────────────────────────
-async function loadStats() {
-  try {
-    const data = await fetch(`${API}/api/corpus`).then(r => r.json());
-    animateStat('numPhrases', 'statPhrases', data.stats.total_phrases);
-    animateStat('numWords',   'statWords',   data.stats.total_words);
-    animateStat('numVocab',   'statVocab',   data.stats.vocab_size);
-  } catch(_) {}
-}
+      50% {
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.8));
+      }
+    }
 
-function animateStat(numId, pillId, newVal) {
-  const numEl  = document.getElementById(numId);
-  const pillEl = document.getElementById(pillId);
-  const oldVal = parseInt(numEl.textContent) || 0;
-  if (newVal !== oldVal) {
-    numEl.textContent = newVal;
-    pillEl.classList.add('bump');
-    setTimeout(() => pillEl.classList.remove('bump'), 400);
-  }
-}
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.4rem;
+    }
 
-// ── CONFETTI ──────────────────────────────────────
-function launchConfetti() {
-  const canvas = document.getElementById('confettiCanvas');
-  const ctx    = canvas.getContext('2d');
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+    }
 
-  const colors = ['#00d4ff','#7c3aed','#10b981','#f59e0b','#ffffff'];
-  const pieces = Array.from({ length: 100 }, () => ({
-    x:  Math.random() * canvas.width,
-    y: -20 - Math.random() * 100,
-    vx: (Math.random() - 0.5) * 5,
-    vy:  Math.random() * 4 + 3,
-    color: colors[Math.floor(Math.random() * colors.length)],
-    w: Math.random() * 10 + 4,
-    h: Math.random() * 6  + 3,
-    rot: Math.random() * 360,
-    rSpeed: (Math.random() - 0.5) * 12,
-    alpha: 1,
-  }));
+    /* LIVE STATS BAR */
+    .stats-bar {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
 
-  let frame;
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let alive = false;
-    pieces.forEach(p => {
-      if (p.y > canvas.height + 20) return;
-      alive = true;
-      p.x   += p.vx;
-      p.y   += p.vy;
-      p.rot += p.rSpeed;
-      if (p.y > canvas.height * 0.7) p.alpha -= 0.02;
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, p.alpha);
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot * Math.PI / 180);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-      ctx.restore();
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      transition: all 0.3s;
+    }
+
+    .stat-pill .num {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: transform 0.3s;
+    }
+
+    .stat-pill.bump .num {
+      animation: bump 0.4s ease;
+    }
+
+    @keyframes bump {
+      0% {
+        transform: scale(1);
+      }
+
+      40% {
+        transform: scale(1.4);
+        color: #fff;
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* LIVE DOT */
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.7);
+      }
+    }
+
+    /* FORM */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .form-card:focus-within {
+      border-color: rgba(0, 212, 255, 0.5);
+      box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.1);
+    }
+
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+    }
+
+    .form-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      padding: 0.9rem;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+    }
+
+    textarea::placeholder {
+      color: var(--dim);
+    }
+
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.6rem;
+    }
+
+    .char-count {
+      font-size: 0.65rem;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+
+    .char-count.warn {
+      color: var(--warn);
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 0.9rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      border: none;
+      border-radius: 8px;
+      color: var(--bg);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.97);
+      filter: brightness(0.9);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .submit-btn .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0, 0, 0, 0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .submit-btn.loading .spinner {
+      display: block;
+    }
+
+    .submit-btn.loading .btn-text {
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* SUCCESS STATE */
+    .success-card {
+      background: var(--surface);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 12px;
+      padding: 2rem 1.2rem;
+      text-align: center;
+      display: none;
+      animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .success-card.visible {
+      display: block;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.85) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .success-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 0.8rem;
+      animation: successPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes successPop {
+      0% {
+        transform: scale(0);
+      }
+
+      60% {
+        transform: scale(1.3);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .success-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 0.5rem;
+    }
+
+    .success-phrase {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.6;
+      padding: 0.6rem 1rem;
+      background: var(--bg);
+      border-radius: 6px;
+      border-left: 3px solid var(--green);
+      margin: 0.8rem 0;
+      text-align: left;
+      font-style: italic;
+    }
+
+    .token-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      justify-content: center;
+      margin: 0.8rem 0;
+    }
+
+    .token-chip {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      animation: tokenPop 0.3s ease both;
+    }
+
+    @keyframes tokenPop {
+      from {
+        opacity: 0;
+        transform: scale(0.6) translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .tc0 {
+      background: rgba(0, 212, 255, 0.15);
+      color: #00d4ff;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .tc1 {
+      background: rgba(124, 58, 237, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.3);
+    }
+
+    .tc2 {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .tc3 {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .add-another-btn {
+      margin-top: 1rem;
+      padding: 0.8rem 1.5rem;
+      background: transparent;
+      border: 1px solid var(--green);
+      border-radius: 8px;
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .add-another-btn:active {
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    /* ERROR */
+    .error-msg {
+      font-size: 0.75rem;
+      color: #ef4444;
+      margin-top: 0.5rem;
+      min-height: 1rem;
+      display: none;
+    }
+
+    .error-msg.visible {
+      display: block;
+    }
+
+    /* EXAMPLES */
+    .examples-section {}
+
+    .examples-title {
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.7rem;
+    }
+
+    .example-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .example-chip {
+      padding: 0.7rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      line-height: 1.4;
+      text-align: left;
+    }
+
+    .example-chip::before {
+      content: '→ ';
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .example-chip:active {
+      background: rgba(0, 212, 255, 0.08);
+      border-color: var(--accent);
+      color: var(--text);
+      transform: scale(0.98);
+    }
+
+    /* CONFETTI CANVAS */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+      <span class="brain-icon">🧠</span>
+      <h1>Entrena la IA</h1>
+      <p class="subtitle">Escribe una frase sobre matemáticas<br>y ayuda a construir el modelo en vivo</p>
+    </div>
+
+    <!-- LIVE STATS -->
+    <div class="stats-bar">
+      <div class="stat-pill" id="statPhrases">
+        <div class="live-dot"></div>
+        <span class="num" id="numPhrases">0</span> frases
+      </div>
+      <div class="stat-pill" id="statWords">
+        <span class="num" id="numWords">0</span> palabras
+      </div>
+      <div class="stat-pill" id="statVocab">
+        <span class="num" id="numVocab">0</span> vocab
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-card" id="formCard">
+      <span class="form-label">Tu aporte al corpus</span>
+      <textarea id="phraseInput" maxlength="200"
+        placeholder="Ej: La suma de los ángulos interiores de un triángulo es ciento ochenta grados..."></textarea>
+      <div class="form-footer">
+        <span class="char-count" id="charCount">0 / 200</span>
+        <span style="font-size:0.65rem;color:var(--muted)">mín. 3 palabras</span>
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="submit-btn" id="submitBtn" onclick="submitPhrase()">
+        <span class="btn-text">Agregar al modelo →</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="success-card" id="successCard">
+      <span class="success-icon">✦</span>
+      <div class="success-title">¡Frase agregada!</div>
+      <div class="success-phrase" id="successPhrase"></div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem">Tokenizada en:</div>
+      <div class="token-preview" id="tokenPreview"></div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.5">
+        Estos tokens ahora forman parte<br>del modelo de probabilidades
+      </div>
+      <button class="add-another-btn" onclick="addAnother()">+ Agregar otra frase</button>
+    </div>
+
+    <!-- EXAMPLES -->
+    <div class="examples-section">
+      <div class="examples-title">💡 Inspiración para tus frases</div>
+      <div class="example-chips">
+        <div class="example-chip" onclick="useExample(this)">La derivada mide la tasa de cambio de una función</div>
+        <div class="example-chip" onclick="useExample(this)">La probabilidad es un número entre cero y uno</div>
+        <div class="example-chip" onclick="useExample(this)">El teorema de Pitágoras relaciona los lados del triángulo
+          rectángulo</div>
+        <div class="example-chip" onclick="useExample(this)">Una función lineal tiene pendiente constante en toda su
+          longitud</div>
+        <div class="example-chip" onclick="useExample(this)">Los números primos son divisibles únicamente por uno y por
+          sí mismos</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "";
+    let pollInterval;
+
+    // ── CHAR COUNT ────────────────────────────────────
+    document.getElementById('phraseInput').addEventListener('input', function () {
+      const len = this.value.length;
+      const cc = document.getElementById('charCount');
+      cc.textContent = `${len} / 200`;
+      cc.classList.toggle('warn', len > 170);
+      hideError();
     });
-    if (alive) frame = requestAnimationFrame(draw);
-    else ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
 
-  if (frame) cancelAnimationFrame(frame);
-  draw();
-}
+    document.getElementById('phraseInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPhrase(); }
+    });
 
-// ── INIT ──────────────────────────────────────────
-loadStats();
-pollInterval = setInterval(loadStats, 3000);
-</script>
+    // ── SUBMIT ────────────────────────────────────────
+    async function submitPhrase() {
+      const input = document.getElementById('phraseInput');
+      const phrase = input.value.trim();
+      const btn = document.getElementById('submitBtn');
+
+      if (!phrase) return showError('Escribe una frase primero');
+      const words = phrase.trim().split(/\s+/).filter(Boolean);
+      if (words.length < 3) return showError('La frase debe tener al menos 3 palabras');
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+      hideError();
+
+      try {
+        const res = await fetch(`${API}/api/corpus/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phrase }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Error al agregar');
+        }
+
+        showSuccess(phrase);
+        input.value = '';
+        document.getElementById('charCount').textContent = '0 / 200';
+
+      } catch (e) {
+        showError(e.message);
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    // ── SUCCESS ───────────────────────────────────────
+    function showSuccess(phrase) {
+      document.getElementById('formCard').style.display = 'none';
+      const card = document.getElementById('successCard');
+      card.classList.add('visible');
+      document.getElementById('successPhrase').textContent = `"${phrase}"`;
+
+      // Tokenize locally for display
+      const tokens = phrase.toLowerCase().replace(/[.,;:!?()""'']/g, '').split(/\s+/).filter(Boolean);
+      const colors = ['tc0', 'tc1', 'tc2', 'tc3'];
+      const preview = document.getElementById('tokenPreview');
+      preview.innerHTML = '';
+      tokens.forEach((t, i) => {
+        setTimeout(() => {
+          const chip = document.createElement('span');
+          chip.className = `token-chip ${colors[i % 4]}`;
+          chip.style.animationDelay = `${i * 0.06}s`;
+          chip.textContent = t;
+          preview.appendChild(chip);
+        }, i * 80);
+      });
+
+      launchConfetti();
+      loadStats();
+    }
+
+    function addAnother() {
+      document.getElementById('successCard').classList.remove('visible');
+      document.getElementById('formCard').style.display = 'block';
+      document.getElementById('phraseInput').focus();
+    }
+
+    // ── EXAMPLES ──────────────────────────────────────
+    function useExample(el) {
+      const input = document.getElementById('phraseInput');
+      input.value = el.textContent.replace(/^→ /, '');
+      document.getElementById('charCount').textContent = `${input.value.length} / 200`;
+      input.focus();
+      hideError();
+    }
+
+    // ── ERROR ─────────────────────────────────────────
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+    function hideError() {
+      document.getElementById('errorMsg').classList.remove('visible');
+    }
+
+    // ── STATS POLLING ─────────────────────────────────
+    async function loadStats() {
+      try {
+        const data = await fetch(`${API}/api/corpus`).then(r => r.json());
+        animateStat('numPhrases', 'statPhrases', data.stats.total_phrases);
+        animateStat('numWords', 'statWords', data.stats.total_words);
+        animateStat('numVocab', 'statVocab', data.stats.vocab_size);
+      } catch (_) { }
+    }
+
+    function animateStat(numId, pillId, newVal) {
+      const numEl = document.getElementById(numId);
+      const pillEl = document.getElementById(pillId);
+      const oldVal = parseInt(numEl.textContent) || 0;
+      if (newVal !== oldVal) {
+        numEl.textContent = newVal;
+        pillEl.classList.add('bump');
+        setTimeout(() => pillEl.classList.remove('bump'), 400);
+      }
+    }
+
+    // ── CONFETTI ──────────────────────────────────────
+    function launchConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#00d4ff', '#7c3aed', '#10b981', '#f59e0b', '#ffffff'];
+      const pieces = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 100,
+        vx: (Math.random() - 0.5) * 5,
+        vy: Math.random() * 4 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        w: Math.random() * 10 + 4,
+        h: Math.random() * 6 + 3,
+        rot: Math.random() * 360,
+        rSpeed: (Math.random() - 0.5) * 12,
+        alpha: 1,
+      }));
+
+      let frame;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        pieces.forEach(p => {
+          if (p.y > canvas.height + 20) return;
+          alive = true;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.rSpeed;
+          if (p.y > canvas.height * 0.7) p.alpha -= 0.02;
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot * Math.PI / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        });
+        if (alive) frame = requestAnimationFrame(draw);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      if (frame) cancelAnimationFrame(frame);
+      draw();
+    }
+
+    // ── INIT ──────────────────────────────────────────
+    loadStats();
+    pollInterval = setInterval(loadStats, 3000);
+  </script>
 </body>
+
 </html>
