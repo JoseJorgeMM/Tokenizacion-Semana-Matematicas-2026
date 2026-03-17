@@ -3303,9 +3303,19 @@
 
     function appendLLMWord(word, isCreative = false) {
       const area = document.getElementById('llmTextArea');
-      // Remove cursor, add word, re-add cursor
       const cursor = document.getElementById('llmCursor');
       if (cursor) cursor.remove();
+
+      // IF HALLUCINATION: Prepend a period to separate "new thoughts"
+      if (isCreative && area.querySelectorAll('.llm-word').length > 0) {
+        const dot = document.createElement('div');
+        dot.className = 'llm-word';
+        dot.style.background = 'transparent';
+        dot.style.padding = '0';
+        dot.style.color = 'var(--muted)';
+        dot.textContent = '.';
+        area.appendChild(dot);
+      }
 
       const div = document.createElement('div');
       div.className = 'llm-word' + (isCreative ? ' hallucinated' : '');
