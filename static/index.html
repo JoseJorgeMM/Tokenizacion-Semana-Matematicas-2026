@@ -2003,6 +2003,8 @@
                     style="accent-color:var(--purple); cursor:pointer;">
                 </div>
                 <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
+                <button class="predict-btn" id="showReflBtn" onclick="showLLMReflectionManual()"
+                  style="display:none; background:var(--green)">🗝️ VER RESULTADOS</button>
               </div>
             </div>
 
@@ -2077,6 +2079,8 @@
       poet: { temp: 50, icon: '🎭', desc: 'Flow creativo' },
       chaos: { temp: 95, icon: '🌀', desc: 'Alucinación total' }
     };
+    let lastLLMResult = null;
+
 
     // ════════════════════════════════════════════════════════
     //  QR CODE GENERATION
@@ -2930,6 +2934,7 @@
 
       llmRunning = true;
       document.getElementById('llmPredictBtn').disabled = true;
+      document.getElementById('showReflBtn').style.display = 'none';
 
       // Reset areas
       const textArea = document.getElementById('llmTextArea');
@@ -3182,8 +3187,22 @@
       `;
       log.prepend(finalEntry);
 
-      // Done - Show Reflection
-      showLLMReflection(generated.length, Array.from(document.querySelectorAll('#llmTextArea .hallucinated')).length, reasonText, reasonIcon);
+      // Done - Show Results Button instead of automatic reflection
+      lastLLMResult = { tokens: generated.length, halluc: Array.from(document.querySelectorAll('#llmTextArea .hallucinated')).length, reason: reasonText, icon: reasonIcon };
+      document.getElementById('showReflBtn').style.display = 'block';
+      document.getElementById('machineIndicator').textContent = 'Generación finalizada - Ver resultados';
+
+      // Reset running state
+      llmRunning = false;
+      document.getElementById('llmPredictBtn').disabled = false;
+      playNotificationSound();
+    }
+
+    function showLLMReflectionManual() {
+      if (lastLLMResult) {
+        showLLMReflection(lastLLMResult.tokens, lastLLMResult.halluc, lastLLMResult.reason, lastLLMResult.icon);
+        document.getElementById('showReflBtn').style.display = 'none';
+      }
     }
 
     function showLLMReflection(tokens, halluc, reason, icon) {
@@ -3205,14 +3224,11 @@
 
       document.getElementById('llmReflection').classList.add('visible');
       playTriumphSound();
-
-      // Reset running state so user can close and start again
-      llmRunning = false;
-      document.getElementById('llmPredictBtn').disabled = false;
     }
 
     function closeReflection() {
       document.getElementById('llmReflection').classList.remove('visible');
+      document.getElementById('showReflBtn').style.display = 'none';
       // Clear for next time
       document.getElementById('llmTextArea').innerHTML = '<span class="llm-cursor" id="llmCursor">▊</span>';
       document.getElementById('llmContextLog').innerHTML = '';
