@@ -768,6 +768,117 @@
       opacity: 1;
     }
 
+    .reflection-overlay {
+      position: absolute;
+      inset: 0.8rem;
+      background: rgba(11, 17, 32, 0.98);
+      backdrop-filter: blur(12px);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: center;
+    }
+
+    .reflection-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+      transform: scale(1) translateY(0);
+    }
+
+    .refl-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 0 15px var(--accent));
+      animation: reflPulse 4s infinite alternate;
+    }
+
+    @keyframes reflPulse {
+      from {
+        transform: scale(1) rotate(0);
+      }
+
+      to {
+        transform: scale(1.1) rotate(5deg);
+      }
+    }
+
+    .refl-title {
+      font-family: var(--font-disp);
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.2rem;
+    }
+
+    .refl-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+      max-width: 650px;
+      margin-bottom: 2rem;
+    }
+
+    .refl-stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .refl-stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .refl-stat-val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--warn);
+    }
+
+    .refl-stat-lbl {
+      font-size: 0.55rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .refl-btn {
+      padding: 0.8rem 2.2rem;
+      background: var(--purple);
+      border: none;
+      border-radius: 100px;
+      color: white;
+      font-family: var(--font-disp);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 5px 20px rgba(124, 58, 237, 0.3);
+    }
+
+    .refl-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.5);
+      background: #8b5cf6;
+    }
+
     /* ─── PHASE 3: LLM PREDICTION MACHINE ─── */
     #phase3 {
       display: grid;
@@ -1607,7 +1718,38 @@
 
       <!-- PHASE 3: LLM PREDICTION MACHINE -->
       <div class="phase" id="phase3">
-        <div class="llm-main">
+        <div class="llm-main" style="position:relative;">
+
+          <!-- Reflection Overlay (Hidden by default) -->
+          <div class="reflection-overlay" id="llmReflection">
+            <div class="refl-icon">🗝️</div>
+            <div class="refl-title">Desbloqueando la Caja Negra</div>
+            <div class="refl-text">
+              Lo que acabamos de presenciar no es magia, es <strong>Matemática Colectiva</strong>. <br><br>
+              Esta IA no "sabe" gramática ni tiene conciencia. Cada palabra que eligió fue el resultado de
+              contar cuántas veces ustedes, los humanos, escribieron esa secuencia en el corpus. <br><br>
+              <span style="color:var(--accent)">La IA es un espejo de la información que le entregamos.</span>
+              Si el corpus es rico y ético, la IA brilla. Si es pobre o sesgado, la IA alucina.
+            </div>
+
+            <div class="refl-stats">
+              <div class="refl-stat-item">
+                <span class="refl-stat-val" id="reflTokens">0</span>
+                <span class="refl-stat-lbl">N-Grams Usados</span>
+              </div>
+              <div class="refl-stat-item">
+                <span class="refl-stat-val" id="reflHalluc">0</span>
+                <span class="refl-stat-lbl">Alucinaciones</span>
+              </div>
+              <div class="refl-stat-item">
+                <span class="refl-stat-val" id="reflProb">0%</span>
+                <span class="refl-stat-lbl">Confianza Promedio</span>
+              </div>
+            </div>
+
+            <button class="refl-btn" onclick="closeReflection()">🔄 EXPERIMENTAR DE NUEVO</button>
+          </div>
+
           <!-- Generated Text Strip -->
           <div class="llm-text-strip">
             <div class="strip-label">🖨️ Texto Generándose en Vivo</div>
@@ -2736,7 +2878,6 @@
         const count = attempt.nexts[chosen];
         const prob = (count / total * 100).toFixed(0);
         addLLMLog(attempt.ctxWords, chosen, count, total, prob, attempt.nexts, tempValue);
-
         // Append word to generated text
         unhighlightWords();
         appendLLMWord(chosen, isCreative);
@@ -2747,10 +2888,65 @@
         await delay(400 * getSpeedFactor());
       }
 
-      // Done
-      document.getElementById('machineIndicator').textContent = '✓ Generación completa';
+      // Done - Show Reflection
+      showLLMReflection(generated.length, Array.from(document.querySelectorAll('#llmTextArea .hallucinated')).length);
+    }
+
+    function showLLMReflection(tokens, halluc) {
+      document.getElementById('reflTokens').textContent = tokens;
+      document.getElementById('reflHalluc').textContent = halluc;
+
+      // Calculate avg probability from logs
+      const probSpans = Array.from(document.querySelectorAll('#llmContextLog .context-new'))
+        .map(el => el.nextElementSibling); // the <span> after chosen word
+      const probs = probSpans.map(el => parseInt(el?.textContent) || 0).filter(p => p > 0);
+      const avg = probs.length ? Math.round(probs.reduce((a, b) => a + b, 0) / probs.length) : 0;
+      document.getElementById('reflProb').textContent = avg + '%';
+
+      document.getElementById('llmReflection').classList.add('visible');
+      playTriumphSound();
+
+      // Reset running state so user can close and start again
       llmRunning = false;
       document.getElementById('llmPredictBtn').disabled = false;
+    }
+
+    function closeReflection() {
+      document.getElementById('llmReflection').classList.remove('visible');
+      // Clear for next time
+      document.getElementById('llmTextArea').innerHTML = '<span class="llm-cursor" id="llmCursor">▊</span>';
+      document.getElementById('llmContextLog').innerHTML = '';
+      resetMachine();
+    }
+
+    function playTriumphSound() {
+      try {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (!audioCtx) return;
+
+        const base = audioCtx.currentTime;
+        const play = (freq, time, dur) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, base + time);
+          gain.gain.setValueAtTime(0, base + time);
+          gain.gain.linearRampToValueAtTime(0.2, base + time + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, base + time + dur);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(base + time);
+          osc.stop(base + time + dur);
+        };
+
+        play(523.25, 0, 0.5);   // C5
+        play(659.25, 0.1, 0.5); // E5
+        play(783.99, 0.2, 0.5); // G5
+        play(1046.50, 0.3, 0.8); // C6
+      } catch (e) { }
     }
 
     function getNextsForContext(ctxWords, lastWord) {
