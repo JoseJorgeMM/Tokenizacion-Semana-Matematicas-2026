@@ -1994,13 +1994,17 @@
                 <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:160px" />
                 <div
                   style="display:flex; flex-direction:column; flex:1; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono);">
-                  <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem; align-items:center;">
                     <span style="color:var(--green)">Memoria estricta</span>
-                    <span style="color:var(--text); font-weight:bold;">Temperatura</span>
+                    <div style="display:flex; align-items:center; gap:0.5rem">
+                      <span style="color:var(--text); font-weight:bold;">T = </span>
+                      <span id="llmTempValueDisplay"
+                        style="color:var(--accent); font-weight:bold; font-size:0.8rem; width:1.5rem">0.0</span>
+                    </div>
                     <span style="color:var(--warn)">Creatividad</span>
                   </div>
                   <input type="range" id="llmTempSlider" min="0" max="100" value="0"
-                    style="accent-color:var(--purple); cursor:pointer;">
+                    style="accent-color:var(--purple); cursor:pointer;" oninput="updateTempDisplay(this.value)">
                 </div>
                 <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
                 <button class="predict-btn" id="showReflBtn" onclick="showLLMReflectionManual()"
@@ -2701,10 +2705,10 @@
 
     function weightedChoose(nexts) {
       const entries = Object.entries(nexts);
-      const total = entries.reduce((s, [, v]) => s + v.count, 0);
+      const total = entries.reduce((s, [, v]) => s + v, 0); // Corrected: v is now the value/count directly
       let r = Math.random() * total;
       for (const [w, v] of entries) {
-        r -= v.count;
+        r -= v;
         if (r <= 0) return w;
       }
       return entries[entries.length - 1][0];
@@ -2816,10 +2820,16 @@
       const slider = document.getElementById('llmTempSlider');
       if (slider) {
         slider.value = personas[type].temp;
+        updateTempDisplay(slider.value);
         // Trigger visual feedback
         const accent = type === 'scientist' ? 'var(--accent)' : type === 'poet' ? 'var(--purple)' : 'var(--warn)';
         slider.style.accentColor = accent;
       }
+    }
+
+    function updateTempDisplay(val) {
+      const display = document.getElementById('llmTempValueDisplay');
+      if (display) display.textContent = (val / 100).toFixed(1);
     }
 
     // ── LLM AMBIENT PARTICLES ──
@@ -2952,14 +2962,10 @@
         resetMachine();
 
         let attempt = null;
-        const tempValue = parseInt(document.getElementById('llmTempSlider').value);
-        let maxAllowedContext = generated.length;
+        const sliderVal = parseInt(document.getElementById('llmTempSlider').value);
+        const temperature = sliderVal / 100;
 
-        if (tempValue > 70) maxAllowedContext = 1;
-        else if (tempValue > 30) maxAllowedContext = 2;
-        else maxAllowedContext = generated.length;
-
-        const maxN = Math.min(generated.length + 1, maxAllowedContext + 1);
+        const maxN = generated.length + 1;
 
         for (let n = maxN; n >= 2; n--) {
           if (generated.length >= n - 1) {
@@ -3080,7 +3086,7 @@
         s4Body.innerHTML = '';
 
         let chosen;
-        if (tempValue === 0) {
+        if (temperature === 0) {
           let bestWord = null;
           let maxCount = -1;
           for (const [w, c] of Object.entries(attempt.nexts)) {
@@ -3088,7 +3094,17 @@
           }
           chosen = bestWord;
         } else {
-          chosen = weightedChoose(attempt.nexts);
+          // Temperature logic: P_i proportional to Count_i^(1/T)
+          // For stability, T=1 is normal. T=0.5 is deterministic. T=2 is more random.
+          // Let's map slider 0-1 to T range.
+          // But to keep it simple and effective:
+          // Adjust counts before sampling. 
+          const power = 1 / Math.max(0.01, temperature * 1.5); // Range ~0.66 to INF
+          const adjustedNexts = {};
+          for (let [w, c] of Object.entries(attempt.nexts)) {
+            adjustedNexts[w] = Math.pow(c, power);
+          }
+          chosen = weightedChoose(adjustedNexts);
         }
 
         if (!isCreative) {
@@ -3124,10 +3140,10 @@
           // TRIGGER GLITCH
           document.getElementById('phase3').classList.add('glitch-effect');
           setTimeout(() => document.getElementById('phase3').classList.remove('glitch-effect'), 800);
-        } else if (tempValue === 0) {
-          meth.innerHTML = '🎯 GREEDY (T=0)<br>Se eligió la probabilidad más alta';
+        } else if (temperature === 0) {
+          meth.innerHTML = `🎯 GREEDY (T=0)<br>Se eligió la probabilidad más alta`;
         } else {
-          meth.innerHTML = '🎲 ESTOCÁSTICO (T>0)<br>Dados ponderados por probabilidad';
+          meth.innerHTML = `🎲 ESTOCÁSTICO (T=${(temperature).toFixed(1)})<br>Ponderación creativa aplicada`;
         }
         s4Body.appendChild(meth);
 
@@ -3147,7 +3163,7 @@
         // Log to right panel
         const count = attempt.nexts[chosen];
         const prob = (count / total * 100).toFixed(0);
-        addLLMLog(attempt.ctxWords, chosen, count, total, prob, attempt.nexts, tempValue);
+        addLLMLog(attempt.ctxWords, chosen, count, total, prob, attempt.nexts, temperature);
         // Append word to generated text
         unhighlightWords();
         appendLLMWord(chosen, isCreative);
@@ -3434,7 +3450,7 @@
         }
         if (sortedNexts.length > 4) candHTML += `<span style="color:var(--muted)">+${sortedNexts.length - 4} más</span>`;
 
-        const tLabel = tempValue === 0 ? '🎯 Greedy' : '🎲 Estocástico';
+        const tLabel = tempValue === 0 ? '🎯 Greedy' : `🎲 T=${tempValue.toFixed(1)}`;
         entry.innerHTML = `
           Contexto: <span class="context-words">"${ctxWords.join(' ')}"</span><br>
           Elegida: <span class="context-new">"${chosen}"</span> · <span style="color:var(--warn)">${prob}%</span> · ${tLabel}<br>
