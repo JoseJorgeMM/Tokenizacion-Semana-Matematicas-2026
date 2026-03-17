@@ -717,6 +717,32 @@
       font-size: 0.65rem;
     }
 
+    .speed-slider::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .dev-signature {
+      margin-left: auto;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+      transition: opacity 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dev-signature span {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .dev-signature:hover {
+      opacity: 1;
+    }
+
     /* ─── PHASE 3: LLM PREDICTION MACHINE ─── */
     #phase3 {
       display: grid;
@@ -1667,6 +1693,10 @@
       <div class="speed-control">
         Velocidad animación:
         <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="3">
+      </div>
+
+      <div class="dev-signature">
+        Developed by <span>Professor Jose Jorge</span>
       </div>
     </footer>
 
