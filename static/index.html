@@ -2321,6 +2321,40 @@
     // ════════════════════════════════════════════════════════
     function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+    function getSpeedFactor() {
+      return getSpeed() / 250;
+    }
+
+    let audioCtx = null;
+    function playSuccessSound() {
+      try {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (!audioCtx) return;
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
     // ════════════════════════════════════════════════════════
     //  Override navBtn1 after graph build
     // ════════════════════════════════════════════════════════
@@ -2407,7 +2441,7 @@
       appendLLMWord(seed);
 
       for (let step = 0; step < 15; step++) {
-        await delay(500);
+        await delay(500 * getSpeedFactor());
         resetMachine();
 
         let attempt = null;
@@ -2462,14 +2496,14 @@
             chip.style.animationDelay = `${ci * 0.15}s`;
             chip.textContent = attempt.ctxWords[ci];
             s1Body.appendChild(chip);
-            await delay(200);
+            await delay(200 * getSpeedFactor());
           }
           // Scanner beam
           const beam = document.createElement('div');
           beam.className = 'scan-beam';
           s1Body.appendChild(beam);
         }
-        await delay(800);
+        await delay(800 * getSpeedFactor());
 
         // ═════ STEP 2: SEARCH CORPUS ═════
         activateStep(2, 'Paso 2: Buscando en corpus...');
@@ -2478,7 +2512,7 @@
 
         if (isCreative) {
           s2Body.innerHTML = '<div class="halluc-alert">🎲 Buscando en TODO<br>el diccionario...</div>';
-          await delay(600);
+          await delay(600 * getSpeedFactor());
         } else {
           // Animated search lines
           const numLines = 8;
@@ -2488,9 +2522,9 @@
             line.style.animationDelay = `${li * 0.06}s`;
             line.innerHTML = '<div class="search-line-fill" style="animation-delay:' + (li * 0.06) + 's"></div>';
             s2Body.appendChild(line);
-            await delay(60);
+            await delay(60 * getSpeedFactor());
           }
-          await delay(500);
+          await delay(500 * getSpeedFactor());
 
           // Result
           const res = document.createElement('div');
@@ -2498,7 +2532,7 @@
           res.textContent = `✓ ${sorted.length} candidatos (${total} coincidencias)`;
           s2Body.appendChild(res);
         }
-        await delay(600);
+        await delay(600 * getSpeedFactor());
 
         // ═════ STEP 3: SHOW CANDIDATES (RACING BARS) ═════
         activateStep(3, 'Paso 3: Calculando probabilidades...');
@@ -2523,15 +2557,15 @@
           `;
           s3Body.appendChild(card);
           cardElements.push(card);
-          await delay(120);
+          await delay(120 * getSpeedFactor());
         }
 
         // Animate bars growing (race!)
-        await delay(50);
+        await delay(50 * getSpeedFactor());
         s3Body.querySelectorAll('.cand-bar-fg').forEach(bar => {
           bar.style.width = bar.dataset.pct + '%';
         });
-        await delay(1200);
+        await delay(1200 * getSpeedFactor());
 
         // ═════ STEP 4: SELECTION ═════
         activateStep(4, 'Paso 4: Eligiendo palabra...');
@@ -2558,14 +2592,14 @@
             cardElements.forEach(c => c.classList.remove('scanning'));
             cardElements[idx].classList.add('scanning');
             const spd = 60 + si * 18; // slows down
-            await delay(spd);
+            await delay(spd * getSpeedFactor());
           }
           cardElements.forEach(c => c.classList.remove('scanning'));
 
           // Highlight winner
           const winnerCard = cardElements.find(c => c.dataset.word === chosen);
           if (winnerCard) winnerCard.classList.add('winner');
-          await delay(400);
+          await delay(400 * getSpeedFactor());
         }
 
         // Show chosen word BIG
@@ -2587,7 +2621,7 @@
         }
         s4Body.appendChild(meth);
 
-        await delay(600);
+        await delay(600 * getSpeedFactor());
 
         // Mark all done
         for (let i = 1; i <= 4; i++) {
@@ -2609,8 +2643,10 @@
         unhighlightWords();
         appendLLMWord(chosen, isCreative);
         generated.push(chosen);
+        
+        playSuccessSound();
 
-        await delay(400);
+        await delay(400 * getSpeedFactor());
       }
 
       // Done
