@@ -1858,6 +1858,13 @@
               "..."
             </div>
 
+            <!-- STOP REASON IN REFLECTION -->
+            <div id="reflStatusInfo"
+              style="margin-bottom: 1.5rem; font-size: 0.75rem; color: var(--muted); border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.02); display: flex; align-items: center; gap: 0.8rem; justify-content: center;">
+              <span id="reflStatusIcon" style="font-size: 1.2rem;">⏹️</span>
+              <span id="reflStatusText">Generación finalizada</span>
+            </div>
+
             <div class="refl-stats">
               <div class="refl-stat-item">
                 <span class="refl-stat-val" id="reflTokens">0</span>
@@ -3156,28 +3163,34 @@
       const lastW = generated[generated.length - 1];
       const isTerminal = corpusCache.some(p => tokenize(p).pop() === lastW);
 
-      let reasonHtml = '';
+      let reasonText = '';
+      let reasonIcon = '⏹️';
       if (generated.length >= 30) {
-        reasonHtml = `<strong>⚙️ LÍMITE DE SEGURIDAD</strong><br>La IA se detuvo para evitar un bucle infinito (30 palabras).`;
+        reasonIcon = '⚙️';
+        reasonText = `La IA se detuvo por el límite de seguridad (30 palabras).`;
       } else if (isTerminal) {
-        reasonHtml = `<strong>🏁 ORACIÓN COMPLETADA</strong><br>La palabra "${lastW}" suele cerrar frases en el corpus. La IA decide descansar.`;
+        reasonIcon = '🏁';
+        reasonText = `La palabra "${lastW}" suele cerrar frases en el corpus.`;
       } else {
-        reasonHtml = `<strong>⏹️ GENERACIÓN FINALIZADA</strong><br>No se encontraron más n-gramas lógicos ni saltos creativos viables.`;
+        reasonIcon = '⏹️';
+        reasonText = `No se encontraron más n-gramas lógicos viables.`;
       }
 
       finalEntry.innerHTML = `
         <div style="color:var(--muted); font-size:0.55rem; text-transform:uppercase; margin-bottom:0.2rem">Estado Final</div>
-        ${reasonHtml}
+        <strong>${reasonIcon} ${reasonText.split('(')[0]}</strong>
       `;
       log.prepend(finalEntry);
 
       // Done - Show Reflection
-      showLLMReflection(generated.length, Array.from(document.querySelectorAll('#llmTextArea .hallucinated')).length);
+      showLLMReflection(generated.length, Array.from(document.querySelectorAll('#llmTextArea .hallucinated')).length, reasonText, reasonIcon);
     }
 
-    function showLLMReflection(tokens, halluc) {
+    function showLLMReflection(tokens, halluc, reason, icon) {
       document.getElementById('reflTokens').textContent = tokens;
       document.getElementById('reflHalluc').textContent = halluc;
+      document.getElementById('reflStatusText').textContent = reason;
+      document.getElementById('reflStatusIcon').textContent = icon;
 
       // Calculate avg probability from logs
       const probSpans = Array.from(document.querySelectorAll('#llmContextLog .context-new'))
