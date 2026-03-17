@@ -1992,9 +1992,10 @@
               <!-- Bottom Controls -->
               <div class="llm-bottom-controls">
                 <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:160px" />
+                <!-- Control: Temperatura -->
                 <div
-                  style="display:flex; flex-direction:column; flex:1; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono);">
-                  <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem; align-items:center;">
+                  style="display:flex; flex-direction:column; flex:1; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono); gap:0.2rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="color:var(--green)">Memoria estricta</span>
                     <div style="display:flex; align-items:center; gap:0.5rem">
                       <span style="color:var(--text); font-weight:bold;">T = </span>
@@ -2005,6 +2006,20 @@
                   </div>
                   <input type="range" id="llmTempSlider" min="0" max="100" value="0"
                     style="accent-color:var(--purple); cursor:pointer;" oninput="updateTempDisplay(this.value)">
+                </div>
+
+                <!-- Control: Límite de Palabras -->
+                <div
+                  style="display:flex; flex-direction:column; flex:0.6; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono); gap:0.2rem; border-left:1px solid var(--border); padding-left:1rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:var(--muted)">Longitud máx.</span>
+                    <div style="display:flex; align-items:center; gap:0.5rem">
+                      <span id="llmMaxWordsDisplay"
+                        style="color:var(--accent); font-weight:bold; font-size:0.8rem; width:1.5rem">25</span>
+                    </div>
+                  </div>
+                  <input type="range" id="llmMaxWordsSlider" min="15" max="30" value="25" step="1"
+                    style="accent-color:var(--accent); cursor:pointer;" oninput="updateMaxWordsDisplay(this.value)">
                 </div>
                 <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
                 <button class="predict-btn" id="showReflBtn" onclick="showLLMReflectionManual()"
@@ -2832,6 +2847,11 @@
       if (display) display.textContent = (val / 100).toFixed(1);
     }
 
+    function updateMaxWordsDisplay(val) {
+      const display = document.getElementById('llmMaxWordsDisplay');
+      if (display) display.textContent = val;
+    }
+
     // ── LLM AMBIENT PARTICLES ──
     let particlesInited = false;
     function initLLMParticles() {
@@ -2955,9 +2975,10 @@
       let generated = [seed];
       appendLLMWord(seed);
 
+      const maxLimit = parseInt(document.getElementById('llmMaxWordsSlider').value);
       let stopReason = "Límite de longitud alcanzado";
 
-      for (let step = 0; step < 30; step++) {
+      for (let step = 0; step < (maxLimit - 1); step++) {
         await delay(500 * getSpeedFactor());
         resetMachine();
 
@@ -3186,9 +3207,9 @@
 
       let reasonText = '';
       let reasonIcon = '⏹️';
-      if (generated.length >= 30) {
+      if (generated.length >= maxLimit) {
         reasonIcon = '⚙️';
-        reasonText = `La IA se detuvo por el límite de seguridad (30 palabras).`;
+        reasonText = `La IA se detuvo por el límite de seguridad (${maxLimit} palabras).`;
       } else if (isTerminal) {
         reasonIcon = '🏁';
         reasonText = `La palabra "${lastW}" suele cerrar frases en el corpus.`;
