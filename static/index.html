@@ -319,6 +319,31 @@
       line-height: 1.5;
     }
 
+    .stream-phrase.new-phrase-anim {
+      animation: newPhraseGlow 2s ease-out both;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+
+    @keyframes newPhraseGlow {
+      0% {
+        background: rgba(0, 212, 255, 0.4);
+        transform: scale(1.05) translateX(-20px);
+        box-shadow: 0 0 30px var(--accent);
+      }
+
+      20% {
+        background: rgba(0, 212, 255, 0.2);
+        transform: scale(1.02) translateX(0);
+      }
+
+      100% {
+        background: var(--surface);
+        transform: scale(1) translateX(0);
+        box-shadow: 0 0 0px transparent;
+      }
+    }
+
     @keyframes slideInPhrase {
       from {
         opacity: 0;
@@ -1812,10 +1837,14 @@
           const stream = document.getElementById('phraseStream');
           for (let i = oldLen; i < data.phrases.length; i++) {
             const div = document.createElement('div');
-            div.className = 'stream-phrase';
+            div.className = 'stream-phrase new-phrase-anim';
             div.textContent = data.phrases[i];
             stream.prepend(div);
+
+            // Remove animation class after it finishes to stay clean
+            setTimeout(() => div.classList.remove('new-phrase-anim'), 2500);
           }
+          if (oldLen > 0) playNotificationSound();
         }
 
         return data;
@@ -2382,6 +2411,43 @@
 
         osc.start();
         osc.stop(audioCtx.currentTime + 0.1);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    function playNotificationSound() {
+      try {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (!audioCtx) return;
+
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc1.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1); // C6
+
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(783.99, audioCtx.currentTime); // G5
+        osc2.frequency.exponentialRampToValueAtTime(1567.98, audioCtx.currentTime + 0.1); // G6
+
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc1.start();
+        osc2.start();
+        osc1.stop(audioCtx.currentTime + 0.4);
+        osc2.stop(audioCtx.currentTime + 0.4);
       } catch (e) {
         console.warn('Audio error:', e);
       }
