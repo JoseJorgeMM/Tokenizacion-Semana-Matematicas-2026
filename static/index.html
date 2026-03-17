@@ -1411,6 +1411,122 @@
       overflow-y: auto;
     }
 
+    /* ── LLM AMBIENT EFFECTS ── */
+    #llm-canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 1s;
+    }
+
+    .phase-3 #llm-canvas-container {
+      opacity: 0.4;
+    }
+
+    .glitch-effect {
+      animation: glitchAnim 0.3s ease infinite;
+    }
+
+    @keyframes glitchAnim {
+      0% {
+        transform: translate(0) skew(0deg);
+        filter: hue-rotate(0deg);
+      }
+
+      20% {
+        transform: translate(-2px, 1px) skew(2deg);
+        filter: hue-rotate(90deg);
+      }
+
+      40% {
+        transform: translate(2px, -1px) skew(-3deg);
+        filter: hue-rotate(180deg);
+      }
+
+      60% {
+        transform: translate(-1px, 2px) skew(1deg);
+        filter: hue-rotate(270deg);
+      }
+
+      80% {
+        transform: translate(1px, -2px) skew(-2deg);
+        filter: hue-rotate(360deg);
+      }
+
+      100% {
+        transform: translate(0) skew(0deg);
+        filter: hue-rotate(0deg);
+      }
+    }
+
+    /* ── CREATIVE MODES ── */
+    .persona-selector {
+      display: flex;
+      background: rgba(11, 17, 32, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 3px;
+      gap: 3px;
+      margin-left: auto;
+    }
+
+    .persona-btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 50px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .persona-btn.active {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .persona-icon {
+      font-size: 0.9rem;
+    }
+
+    .persona-desc {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.6rem;
+      color: var(--muted);
+      width: 180px;
+      margin-bottom: 0.8rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      z-index: 100;
+    }
+
+    .persona-btn:hover .persona-desc {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .context-log::-webkit-scrollbar {
       width: 2px;
     }
@@ -1718,8 +1834,11 @@
 
       <!-- PHASE 3: LLM PREDICTION MACHINE -->
       <div class="phase" id="phase3">
-        <div class="llm-main" style="position:relative;">
+        <div id="llm-canvas-container">
+          <canvas id="llmParticles"></canvas>
+        </div>
 
+        <div class="llm-main" style="position:relative; z-index:1;">
           <!-- Reflection Overlay (Hidden by default) -->
           <div class="reflection-overlay" id="llmReflection">
             <div class="refl-icon">🗝️</div>
@@ -1748,6 +1867,28 @@
             </div>
 
             <button class="refl-btn" onclick="closeReflection()">🔄 EXPERIMENTAR DE NUEVO</button>
+            <button class="refl-btn" style="background:var(--purple); margin-top:0.5rem"
+              onclick="exportKnowledgeCard()">💾 DESCARGAR POSTAL IA</button>
+          </div>
+
+          <!-- Hidden Export Canvas Template -->
+          <div id="exportTemplate"
+            style="display:none; position:fixed; width:800px; height:500px; background:#050810; color:white; font-family:sans-serif; padding:40px; border:1px solid #1a2840;">
+            <div
+              style="font-size:12px; color:#00d4ff; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px;">
+              Semana de las Matemáticas 2026</div>
+            <div style="font-size:32px; font-weight:bold; margin-bottom:30px; line-height:1.2;" id="exportText"></div>
+            <div
+              style="margin-top:auto; border-top:1px solid #1a2840; padding-top:20px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:14px; font-weight:bold;">Probabilidad Colectiva</div>
+                <div style="font-size:11px; color:#64748b;">Generado por una red de N-gramas</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px; color:#64748b;">Developed by</div>
+                <div style="font-size:14px; font-weight:bold; color:#00d4ff;">Professor Jose Jorge</div>
+              </div>
+            </div>
           </div>
 
           <!-- Generated Text Strip -->
@@ -1758,91 +1899,109 @@
             </div>
           </div>
 
-          <!-- The Prediction Machine -->
-          <div class="prediction-machine">
-            <div class="machine-header">
-              <span class="machine-header-title">⚙️ La Máquina de Predicción</span>
-              <span class="machine-step-indicator" id="machineIndicator">Esperando...</span>
+          <div class="llm-machine-grid">
+            <!-- Left: The Process -->
+            <div class="llm-process-area">
+              <div class="machine-header">
+                <span class="machine-step-indicator" id="machineIndicator">LISTO PARA PREDECIR</span>
+                <div class="persona-selector">
+                  <button class="persona-btn active" id="p-scientist" onclick="setLLMPersona('scientist')">
+                    <span class="persona-icon">🔬</span> CIENCIAS
+                    <div class="persona-desc"><b>Modo Científico:</b> Temperatura baja (0). Precisión máxima y lógica
+                      rigurosa.</div>
+                  </button>
+                  <button class="persona-btn" id="p-poet" onclick="setLLMPersona('poet')">
+                    <span class="persona-icon">🎭</span> POESÍA
+                    <div class="persona-desc"><b>Modo Poeta:</b> Temperatura media (0.5). Creatividad equilibrada y
+                      fluida.</div>
+                  </button>
+                  <button class="persona-btn" id="p-chaos" onclick="setLLMPersona('chaos')">
+                    <span class="persona-icon">🌀</span> CAOS
+                    <div class="persona-desc"><b>Modo Caos:</b> Temperatura alta (0.9). Riesgo extremo, alucinaciones
+                      frecuentes.</div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="machine-pipeline" id="machinePipeline">
+                <!-- Step 1: Context -->
+                <div class="machine-step" id="mStep1">
+                  <div class="step-header">
+                    <span class="step-num">1</span>
+                    <span class="step-name">CONTEXTO</span>
+                  </div>
+                  <div class="step-body" id="mStep1Body">
+                    <span style="color:var(--muted);font-size:0.6rem">Leyendo memoria...</span>
+                  </div>
+                </div>
+
+                <div class="pipe-arrow" id="pArrow1">→</div>
+
+                <!-- Step 2: Search -->
+                <div class="machine-step" id="mStep2">
+                  <div class="step-header">
+                    <span class="step-num">2</span>
+                    <span class="step-name">BUSCAR</span>
+                  </div>
+                  <div class="step-body" id="mStep2Body">
+                    <span style="color:var(--muted);font-size:0.6rem">Escaneando corpus...</span>
+                  </div>
+                </div>
+
+                <div class="pipe-arrow" id="pArrow2">→</div>
+
+                <!-- Step 3: Candidates -->
+                <div class="machine-step" id="mStep3">
+                  <div class="step-header">
+                    <span class="step-num">3</span>
+                    <span class="step-name">CANDIDATOS</span>
+                  </div>
+                  <div class="step-body" id="mStep3Body">
+                    <span style="color:var(--muted);font-size:0.6rem">Calculando probabilidades...</span>
+                  </div>
+                </div>
+
+                <div class="pipe-arrow" id="pArrow3">→</div>
+
+                <!-- Step 4: Selection -->
+                <div class="machine-step" id="mStep4">
+                  <div class="step-header">
+                    <span class="step-num">4</span>
+                    <span class="step-name">ELEGIR</span>
+                  </div>
+                  <div class="step-body" id="mStep4Body">
+                    <span style="color:var(--muted);font-size:0.6rem">Seleccionando...</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Controls -->
+              <div class="llm-bottom-controls">
+                <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:160px" />
+                <div
+                  style="display:flex; flex-direction:column; flex:1; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono);">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
+                    <span style="color:var(--green)">Memoria estricta</span>
+                    <span style="color:var(--text); font-weight:bold;">Temperatura</span>
+                    <span style="color:var(--warn)">Creatividad</span>
+                  </div>
+                  <input type="range" id="llmTempSlider" min="0" max="100" value="0"
+                    style="accent-color:var(--purple); cursor:pointer;">
+                </div>
+                <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
+              </div>
             </div>
 
-            <div class="machine-pipeline" id="machinePipeline">
-              <!-- Step 1: Context -->
-              <div class="machine-step" id="mStep1">
-                <div class="step-header">
-                  <span class="step-num">1</span>
-                  <span class="step-name">CONTEXTO</span>
-                </div>
-                <div class="step-body" id="mStep1Body">
-                  <span style="color:var(--muted);font-size:0.6rem">Leyendo memoria...</span>
-                </div>
-              </div>
-
-              <div class="pipe-arrow" id="pArrow1">→</div>
-
-              <!-- Step 2: Search -->
-              <div class="machine-step" id="mStep2">
-                <div class="step-header">
-                  <span class="step-num">2</span>
-                  <span class="step-name">BUSCAR</span>
-                </div>
-                <div class="step-body" id="mStep2Body">
-                  <span style="color:var(--muted);font-size:0.6rem">Escaneando corpus...</span>
-                </div>
-              </div>
-
-              <div class="pipe-arrow" id="pArrow2">→</div>
-
-              <!-- Step 3: Candidates -->
-              <div class="machine-step" id="mStep3">
-                <div class="step-header">
-                  <span class="step-num">3</span>
-                  <span class="step-name">CANDIDATOS</span>
-                </div>
-                <div class="step-body" id="mStep3Body">
-                  <span style="color:var(--muted);font-size:0.6rem">Calculando probabilidades...</span>
-                </div>
-              </div>
-
-              <div class="pipe-arrow" id="pArrow3">→</div>
-
-              <!-- Step 4: Selection -->
-              <div class="machine-step" id="mStep4">
-                <div class="step-header">
-                  <span class="step-num">4</span>
-                  <span class="step-name">ELEGIR</span>
-                </div>
-                <div class="step-body" id="mStep4Body">
-                  <span style="color:var(--muted);font-size:0.6rem">Seleccionando...</span>
-                </div>
+            <!-- Right Log Panel -->
+            <div class="llm-log-panel">
+              <div class="side-title">📋 Historial de Decisiones</div>
+              <div class="context-log" id="llmContextLog"></div>
+              <div class="math-box">
+                <strong>Matemática Contextual</strong>
+                <span class="eq">P(w<sub>t</sub> | w<sub>t-1</sub>, w<sub>t-2</sub>, ...)</span>
+                Cada paso muestra cómo la IA busca en el corpus las fracciones exactas para elegir.
               </div>
             </div>
-          </div>
-
-          <!-- Bottom Controls -->
-          <div class="llm-bottom-controls">
-            <input class="seed-input" id="llmSeedInput" placeholder="Palabra inicial..." style="max-width:160px" />
-            <div
-              style="display:flex; flex-direction:column; flex:1; color:var(--muted); font-size:0.58rem; font-family:var(--font-mono);">
-              <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
-                <span style="color:var(--green)">Memoria estricta</span>
-                <span style="color:var(--text); font-weight:bold;">Temperatura</span>
-                <span style="color:var(--warn)">Creatividad</span>
-              </div>
-              <input type="range" id="llmTempSlider" min="0" max="100" value="0"
-                style="accent-color:var(--purple); cursor:pointer;">
-            </div>
-            <button class="predict-btn" id="llmPredictBtn" onclick="startLLMPrediction()">▶ GENERAR IA</button>
-          </div>
-        </div>
-
-        <!-- Right Log Panel -->
-        <div class="llm-log-panel">
-          <div class="side-title">📋 Historial de Decisiones</div>
-          <div class="context-log" id="llmContextLog"></div>
-          <div class="math-box">
-            <strong>Matemática Contextual</strong>
-            <span class="eq">P(w<sub>t</sub> | w<sub>t-1</sub>, w<sub>t-2</sub>, ...)</span>
-            Cada paso muestra cómo la IA busca en el corpus las fracciones exactas que determinan la siguiente palabra.
           </div>
         </div>
       </div>
@@ -1897,6 +2056,14 @@
     let trainD3Node = null, trainD3Link = null;
     let predictD3Node = null, predictD3Link = null, predictNodesData = null, predictLinksData = null;
 
+    // ── LLM PERSONA STATE ──
+    let currentPersona = 'scientist';
+    const personas = {
+      scientist: { temp: 0, icon: '🔬', desc: 'Máxima precisión' },
+      poet: { temp: 50, icon: '🎭', desc: 'Flow creativo' },
+      chaos: { temp: 95, icon: '🌀', desc: 'Alucinación total' }
+    };
+
     // ════════════════════════════════════════════════════════
     //  QR CODE GENERATION
     // ════════════════════════════════════════════════════════
@@ -1929,6 +2096,8 @@
     // ════════════════════════════════════════════════════════
     function setPhase(n) {
       currentPhase = n;
+      document.body.className = `phase-${n}`; // For CSS transitions
+
       document.querySelectorAll('.phase').forEach((p, i) => {
         p.classList.toggle('active', i === n);
       });
@@ -1940,6 +2109,10 @@
         if (i === n) p.classList.add('active');
         else if (i < n) p.classList.add('done');
       });
+
+      if (n === 3) {
+        initLLMParticles();
+      }
     }
 
     async function goToTrain() {
@@ -2616,6 +2789,79 @@
       setPhase(3);
     });
 
+    // ── LLM PERSONAS ──
+    function setLLMPersona(type) {
+      currentPersona = type;
+      document.querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`p-${type}`).classList.add('active');
+
+      const slider = document.getElementById('llmTempSlider');
+      if (slider) {
+        slider.value = personas[type].temp;
+        // Trigger visual feedback
+        const accent = type === 'scientist' ? 'var(--accent)' : type === 'poet' ? 'var(--purple)' : 'var(--warn)';
+        slider.style.accentColor = accent;
+      }
+    }
+
+    // ── LLM AMBIENT PARTICLES ──
+    let particlesInited = false;
+    function initLLMParticles() {
+      if (particlesInited) return;
+      particlesInited = true;
+
+      const canvas = document.getElementById('llmParticles');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let w, h;
+
+      const resize = () => {
+        w = canvas.width = canvas.offsetWidth;
+        h = canvas.height = canvas.offsetHeight;
+      };
+      window.addEventListener('resize', resize);
+      resize();
+
+      const symbols = '01101001TOKENIZACION∑∏∆∇∂'.split('');
+      const particles = [];
+      const count = 60;
+
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          char: symbols[Math.floor(Math.random() * symbols.length)],
+          size: 8 + Math.random() * 12,
+          speed: 0.5 + Math.random() * 1.5,
+          opacity: 0.1 + Math.random() * 0.4
+        });
+      }
+
+      function draw() {
+        if (currentPhase !== 3) {
+          requestAnimationFrame(draw);
+          return;
+        }
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.textAlign = 'center';
+
+        particles.forEach(p => {
+          ctx.font = `${p.size}px monospace`;
+          ctx.fillStyle = `rgba(0, 212, 255, ${p.opacity})`;
+          ctx.fillText(p.char, p.x, p.y);
+
+          p.y += p.speed;
+          if (p.y > h + 20) {
+            p.y = -20;
+            p.x = Math.random() * w;
+          }
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
     document.getElementById('seedInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') startPrediction();
     });
@@ -2854,6 +3100,9 @@
         if (isCreative) {
           meth.innerHTML = '⚠️ ALUCINACIÓN<br>Palabra tomada al azar del diccionario';
           meth.style.color = 'var(--warn)';
+          // TRIGGER GLITCH
+          document.getElementById('phase3').classList.add('glitch-effect');
+          setTimeout(() => document.getElementById('phase3').classList.remove('glitch-effect'), 800);
         } else if (tempValue === 0) {
           meth.innerHTML = '🎯 GREEDY (T=0)<br>Se eligió la probabilidad más alta';
         } else {
@@ -2917,6 +3166,42 @@
       document.getElementById('llmTextArea').innerHTML = '<span class="llm-cursor" id="llmCursor">▊</span>';
       document.getElementById('llmContextLog').innerHTML = '';
       resetMachine();
+    }
+
+    function exportKnowledgeCard() {
+      const text = document.getElementById('llmTextArea').innerText.replace('▊', '').trim();
+      const template = document.getElementById('exportTemplate');
+      const exportText = document.getElementById('exportText');
+
+      exportText.textContent = `"${text}"`;
+
+      // Use simple SVG-in-Image trick to download
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="800" height="500">
+          <rect width="100%" height="100%" fill="#050810"/>
+          <text x="40" y="60" fill="#00d4ff" font-family="sans-serif" font-size="12" letter-spacing="2">SEMANA DE LAS MATEMÁTICAS 2026</text>
+          <foreignObject x="40" y="100" width="720" height="300">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="color:white; font-family:sans-serif; font-size:28px; font-weight:bold; line-height:1.4;">
+              "${text}"
+            </div>
+          </foreignObject>
+          <line x1="40" y1="420" x2="760" y2="420" stroke="#1a2840" stroke-width="1"/>
+          <text x="40" y="450" fill="white" font-family="sans-serif" font-size="14" font-weight="bold">Probabilidad Colectiva</text>
+          <text x="40" y="470" fill="#64748b" font-family="sans-serif" font-size="11">Generado por una red de N-gramas</text>
+          <text x="760" y="450" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">Developed by</text>
+          <text x="760" y="475" fill="#00d4ff" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="end">Professor Jose Jorge</text>
+        </svg>
+      `;
+
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `IA-Reflexion-${Date.now()}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
     function playTriumphSound() {
