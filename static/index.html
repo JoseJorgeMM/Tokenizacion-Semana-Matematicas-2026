@@ -2933,7 +2933,9 @@
       let generated = [seed];
       appendLLMWord(seed);
 
-      for (let step = 0; step < 15; step++) {
+      let stopReason = "Límite de longitud alcanzado";
+
+      for (let step = 0; step < 30; step++) {
         await delay(500 * getSpeedFactor());
         resetMachine();
 
@@ -3143,6 +3145,31 @@
 
         await delay(400 * getSpeedFactor());
       }
+
+      // ═════ FINAL LOG: WHY DID WE STOP? ═════
+      const log = document.getElementById('llmContextLog');
+      const finalEntry = document.createElement('div');
+      finalEntry.className = 'context-entry';
+      finalEntry.style.borderLeftColor = 'var(--text)';
+      finalEntry.style.background = 'rgba(255,255,255,0.05)';
+
+      const lastW = generated[generated.length - 1];
+      const isTerminal = corpusCache.some(p => tokenize(p).pop() === lastW);
+
+      let reasonHtml = '';
+      if (generated.length >= 30) {
+        reasonHtml = `<strong>⚙️ LÍMITE DE SEGURIDAD</strong><br>La IA se detuvo para evitar un bucle infinito (30 palabras).`;
+      } else if (isTerminal) {
+        reasonHtml = `<strong>🏁 ORACIÓN COMPLETADA</strong><br>La palabra "${lastW}" suele cerrar frases en el corpus. La IA decide descansar.`;
+      } else {
+        reasonHtml = `<strong>⏹️ GENERACIÓN FINALIZADA</strong><br>No se encontraron más n-gramas lógicos ni saltos creativos viables.`;
+      }
+
+      finalEntry.innerHTML = `
+        <div style="color:var(--muted); font-size:0.55rem; text-transform:uppercase; margin-bottom:0.2rem">Estado Final</div>
+        ${reasonHtml}
+      `;
+      log.prepend(finalEntry);
 
       // Done - Show Reflection
       showLLMReflection(generated.length, Array.from(document.querySelectorAll('#llmTextArea .hallucinated')).length);
